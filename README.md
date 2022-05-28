@@ -1,5 +1,5 @@
 # PySN
-Fetches title updates for PlayStation Vita games. Support for more consoles is planned. Maybe even a GUI. Who knows.
+Fetches title updates for PlayStation Vita and PlayStation 3 games. Support for more consoles is planned. Maybe even a GUI. Who knows.
 
 Installation
 ============
