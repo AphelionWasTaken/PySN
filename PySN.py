@@ -15,7 +15,7 @@ while(loop=='Y'):
     id = bytes('np_' + title_id,'UTF-8')
 
     hash = (hmac.new(key, id, hashlib.sha256).hexdigest())
-
+    
     xml_url = ('https://gs-sec.ww.np.dl.playstation.net/pl/np/' + title_id + '/' + hash + '/' + title_id + '-ver.xml')
 
     var_url = requests.get(xml_url, verify=False)
@@ -31,4 +31,4 @@ while(loop=='Y'):
         else: print('No updates available for this game.')
     else: print('Invalid Title ID')
 
-    loop = input('Check for more updates? Y/N: ')
+    loop = input('Check for more updates? Y/N: ').upper()
