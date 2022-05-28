@@ -25,7 +25,9 @@ while(loop=='Y'):
             for item in root.iter('package'):
                 url = (item.get('url'))
                 update_file = basename(url)
+                print('downloading ' + update_file)
                 open(update_file,'wb').write(requests.get(url).content)
+            print('Finished.')
         else: print('No updates available for this game.')
     else: print('Invalid Title ID')
 
