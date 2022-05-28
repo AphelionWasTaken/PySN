@@ -16,7 +16,6 @@ while(loop=='Y'):
     hash = (hmac.new(key, id, hashlib.sha256).hexdigest())
 
     xml_url = ('https://gs-sec.ww.np.dl.playstation.net/pl/np/' + title_id + '/' + hash + '/' + title_id + '-ver.xml')
-    print(xml_url)
 
     var_url = requests.get(xml_url, verify=False)
     if var_url.status_code == 200:
@@ -25,7 +24,6 @@ while(loop=='Y'):
             for item in root.iter('package'):
                 url = (item.get('url'))
                 update_file = basename(url)
-                print(url)
                 open(update_file,'wb').write(requests.get(url).content)
         else: print('No updates available for this game.')
     else: print('Invalid Title ID')
