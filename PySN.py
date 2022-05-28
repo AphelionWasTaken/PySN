@@ -2,7 +2,8 @@ import hmac
 import hashlib
 import requests
 import xml.etree.ElementTree as ET
-from os.path import basename
+from os import makedirs, path
+#This is always a good sign:
 requests.packages.urllib3.disable_warnings() 
 
 loop = 'Y'
@@ -17,16 +18,29 @@ while(loop=='Y'):
     
     xml_url = ('https://gs-sec.ww.np.dl.playstation.net/pl/np/' + title_id + '/' + hash + '/' + title_id + '-ver.xml')
 
+    #I'm sure there's a better way to handle Sony's weird certs.
     var_url = requests.get(xml_url, verify=False)
+
     if var_url.status_code == 200:
         if var_url.text != '':
             root = ET.fromstring(var_url.content)
+            name = root.find('./tag/package/paramsfo/title').text
+            for item in root.iter('titlepatch'):
+                titleid = item.get('titleid')
+           
+            print('Found update(s) for: ' + titleid + ' ' + name)
+
+            download_path = 'Updates/' + titleid + ' ' + name
+            if not path.exists(download_path):
+                makedirs(download_path)
+
             for item in root.iter('package'):
                 url = (item.get('url'))
-                update_file = basename(url)
+                update_file = path.basename(url)
                 print('downloading ' + update_file)
-                open(update_file,'wb').write(requests.get(url).content)
+                open(download_path + '/' + update_file,'wb').write(requests.get(url).content)
             print('Finished.')
+
         else: print('No updates available for this game.')
     else: print('Invalid Title ID')
 
