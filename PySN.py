@@ -3,6 +3,7 @@ import hashlib
 import requests
 import xml.etree.ElementTree as ET
 from os.path import basename
+requests.packages.urllib3.disable_warnings() 
 
 loop = 'Y'
 
