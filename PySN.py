@@ -6,11 +6,10 @@ from os.path import basename
 requests.packages.urllib3.disable_warnings() 
 
 loop = 'Y'
+key = bytearray.fromhex('E5E278AA1EE34082A088279C83F9BBC806821C52F2AB5D2B4ABD995450355114')
 
 while(loop=='Y'):
     title_id = input('Enter Title ID: ')
-
-    key = bytearray.fromhex('E5E278AA1EE34082A088279C83F9BBC806821C52F2AB5D2B4ABD995450355114')
 
     id = bytes('np_' + title_id,'UTF-8')
 
