@@ -30,7 +30,7 @@ while(loop=='Y'):
            
             print('Found update(s) for: ' + titleid + ' ' + name)
 
-            download_path = 'Updates/' + titleid + ' ' + name
+            download_path = 'Updates/PlayStation Vita/' + titleid + ' ' + name
             if not path.exists(download_path):
                 makedirs(download_path)
 
@@ -42,6 +42,30 @@ while(loop=='Y'):
             print('Finished.')
 
         else: print('No updates available for this game.')
-    else: print('Invalid Title ID')
+
+    else:
+        xml_url = 'https://a0.ww.np.dl.playstation.net/tpl/np/' + title_id + '/' + title_id + '-ver.xml'
+        var_url = requests.get(xml_url, verify=False)
+        if var_url.status_code == 200:
+            if var_url.text != '':
+                root = ET.fromstring(var_url.content)
+                name = root.find('./tag/package/paramsfo/TITLE').text
+                for item in root.iter('titlepatch'):
+                    titleid = item.get('titleid')
+           
+                print('Found update(s) for: ' + titleid + ' ' + name)
+
+                download_path = 'Updates/PlayStation 3/' + titleid + ' ' + name
+                if not path.exists(download_path):
+                   makedirs(download_path)
+
+                for item in root.iter('package'):
+                    url = (item.get('url'))
+                    update_file = path.basename(url)
+                    print('downloading ' + update_file)
+                    open(download_path + '/' + update_file,'wb').write(requests.get(url).content)
+                print('Finished.')
+
+        else: print('No updates available for this game.')
 
     loop = input('Check for more updates? Y/N: ').upper()
