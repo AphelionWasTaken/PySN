@@ -40,7 +40,6 @@ while(loop=='Y'):
                 print('downloading ' + update_file)
                 open(download_path + '/' + update_file,'wb').write(requests.get(url).content)
             print('Finished.')
-
         else: print('No updates available for this game.')
 
     else:
@@ -65,7 +64,7 @@ while(loop=='Y'):
                     print('downloading ' + update_file)
                     open(download_path + '/' + update_file,'wb').write(requests.get(url).content)
                 print('Finished.')
-
-        else: print('No updates available for this game.')
+            else: print('No updates available for this game.')
+        else: print('Invalid Title ID.')
 
     loop = input('Check for more updates? Y/N: ').upper()
