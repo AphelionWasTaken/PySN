@@ -10,7 +10,7 @@ loop = 'Y'
 key = bytearray.fromhex('E5E278AA1EE34082A088279C83F9BBC806821C52F2AB5D2B4ABD995450355114')
 
 while(loop=='Y'):
-    title_id = input('Enter Title ID: ')
+    title_id = input('Enter Title ID: ').upper()
 
     id = bytes('np_' + title_id,'UTF-8')
 
@@ -30,7 +30,8 @@ while(loop=='Y'):
            
             print('Found update(s) for: ' + titleid + ' ' + name)
 
-            download_path = ('Updates/PlayStation Vita/' + titleid + ' ' + name).replace(':',' -')
+            name = name.replace(':',' -').replace('/',' ').replace('?','')
+            download_path = 'Updates/PlayStation Vita/' + titleid + ' ' + name
             if not path.exists(download_path):
                 makedirs(download_path)
 
@@ -54,7 +55,8 @@ while(loop=='Y'):
            
                 print('Found update(s) for: ' + titleid + ' ' + name)
 
-                download_path = ('Updates/PlayStation 3/' + titleid + ' ' + name).replace(':',' -')
+                name = name.replace(':',' -').replace('/',' ').replace('?','')
+                download_path = ('Updates/PlayStation 3/' + titleid + ' ' + name)
                 if not path.exists(download_path):
                    makedirs(download_path)
 
