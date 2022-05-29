@@ -3,7 +3,7 @@ Fetches title updates for PlayStation Vita and PlayStation 3 games. I might look
 
 Installation
 ============
-You must have [Python](https://www.python.org/ftp/python/3.10.4/python-3.10.4-amd64.exe) installed to run this program. If you need to install it, be sure to check "Add Python to PATH" on the very first screen.
+You must have [Python](https://www.python.org/downloads/) installed to run this program. If you need to install it, be sure to check "Add Python to PATH" on the very first screen.
 
 You will also need the requests python module installed to run this program. To install this, open any terminal (Command Prompt, MSVC, etc.) and type `pip install requests`.
 
