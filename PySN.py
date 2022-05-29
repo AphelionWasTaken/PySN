@@ -24,7 +24,7 @@ while(loop=='Y'):
     if var_url.status_code == 200:
         if var_url.text != '':
             root = ET.fromstring(var_url.content)
-            name = root.find('./tag/package/paramsfo/title').text
+            name = (root.find('./tag/package/paramsfo/title').text).replace('\n',' ')
             for item in root.iter('titlepatch'):
                 titleid = item.get('titleid')
            
@@ -49,7 +49,7 @@ while(loop=='Y'):
         if var_url.status_code == 200:
             if var_url.text != '':
                 root = ET.fromstring(var_url.content)
-                name = root.find('./tag/package/paramsfo/TITLE').text
+                name = (root.find('./tag/package/paramsfo/TITLE').text).replace('\n',' ')
                 for item in root.iter('titlepatch'):
                     titleid = item.get('titleid')
            
