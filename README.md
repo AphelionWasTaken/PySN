@@ -1,13 +1,13 @@
 # PySN
-Fetches title updates for PlayStation Vita and PlayStation 3 games. I might look into support for PS4 Title Updates. Maybe even a GUI. Who knows.
+A tool for downloading Title Updates for PlayStation Vita and PlayStation 3 games. I might look into support for PS4 Title Updates. Maybe even a GUI. Who knows.
 
 Installation
 ============
 You must have [Python](https://www.python.org/downloads/) installed to run this program. If you need to install it, be sure to check "Add Python to PATH" on the very first screen.
 
-You will also need the requests python module installed to run this program. To install this, open any terminal (Command Prompt, MSVC, etc.) and type `pip install requests`.
+You will also need the Requests Python module installed to run this program. To install this, open any terminal (Command Prompt, MSVC, etc.) and type `pip install requests`.
 
-Click on the green code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`. Or run it however else you want, I don't care, I'm not a cop.
+Click on the green Code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`. Or run it however else you want, I don't care, I'm not a cop.
 
 Installation through PyPl soon™
 
