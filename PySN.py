@@ -30,7 +30,7 @@ while(loop=='Y'):
            
             print('Found update(s) for: ' + titleid + ' ' + name)
 
-            download_path = 'Updates/PlayStation Vita/' + titleid + ' ' + name
+            download_path = ('Updates/PlayStation Vita/' + titleid + ' ' + name).replace(':',' -')
             if not path.exists(download_path):
                 makedirs(download_path)
 
@@ -54,7 +54,7 @@ while(loop=='Y'):
            
                 print('Found update(s) for: ' + titleid + ' ' + name)
 
-                download_path = 'Updates/PlayStation 3/' + titleid + ' ' + name
+                download_path = ('Updates/PlayStation 3/' + titleid + ' ' + name).replace(':',' -')
                 if not path.exists(download_path):
                    makedirs(download_path)
 
