@@ -68,7 +68,6 @@ while(loop=='Y'):
 
         else:
             key = bytearray.fromhex('AD62E37F905E06BC19593142281C112CEC0E7EC3E97EFDCAEFCDBAAFA6378D84')
-            id = bytes('np_' + title_id,'UTF-8')
             hash = (hmac.new(key, id, hashlib.sha256).hexdigest())
             xml_url = ('https://gs-sec.ww.np.dl.playstation.net/plo/np/' + title_id + '/' + hash + '/' + title_id + '-ver.xml')
             var_url = requests.get(xml_url, verify=False)
