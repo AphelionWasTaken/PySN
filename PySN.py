@@ -1,4 +1,5 @@
 import hmac
+import json
 import hashlib
 import requests
 import xml.etree.ElementTree as ET
@@ -86,11 +87,15 @@ while(loop=='Y'):
                     if not path.exists(download_path):
                        makedirs(download_path)
 
-                    for item in root.iter('delta_info_set'):
-                        url = (item.get('url'))
-                        update_file = path.basename(url)
-                        print('downloading ' + update_file)
-                        open(download_path + '/' + update_file,'wb').write(requests.get(url).content)
+                    for item in root.iter('package'):
+                        man_url = (item.get('manifest_url'))
+                        json_url = requests.get(man_url)
+                        json_cont = json.loads(json_url.content)
+                        for item in (json_cont['pieces']):
+                            url = (item['url'])
+                            update_file = path.basename(url)
+                            print('downloading ' + update_file)
+                            open(download_path + '/' + update_file,'wb').write(requests.get(url).content)
                     print('Finished.')
                 else: print('No updates available for this game.')
 
