@@ -1,5 +1,5 @@
 # PySN
-A tool for downloading Title Updates for PlayStation Vita and PlayStation 3 games. I might look into support for PS4 Title Updates. Maybe even a GUI. Who knows.
+A simple tool for downloading Title Updates for PlayStation 3, PlayStation 4, and PlayStation Vita games.
 
 Installation
 ============
@@ -13,6 +13,6 @@ Installation through PyPl soon™
 
 Using PySN
 ============
-Once the program is open, just type a valid PS Vita or PS3 Title ID (e.g. PCSA00007) into the console and press enter. This script will then download any Title Updates for that game, and then it will ask you if you want to search for more. If you do not answer "y" or "Y", then the program closes.
+Once the program is open, just type a valid PS3, PS4, or PS Vita Title ID (e.g. PCSA00007) into the console and press enter. This script will then download any Title Updates for that game, and then it will ask you if you want to search for more. If you do not answer "y" or "Y", then the program closes.
 
 Title Updates are downloaded into `[Folder Containing PySN.py]/Updates/[Console]/[Title ID] [Game Name]/`. Maybe someday I will let you change that without making you dig into the code...
