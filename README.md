@@ -3,11 +3,17 @@ A simple tool for downloading Title Updates for PlayStation 3, PlayStation 4, an
 
 Installation
 ============
-You must have [Python](https://www.python.org/downloads/) installed to run this program. If you need to install it, be sure to check "Add Python to PATH" on the very first screen.
+Windows
+------------------------
+Just download PySN.exe from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest). You may want to put it in a new folder after you've downloaded it.
 
-You will also need the Requests Python module installed to run this program. To install this, open any terminal (Command Prompt, MSVC, etc.) and type `pip install requests`.
+Linux/BSD/Mac OS
+------------------------
+This program uses Python 3. You must have [Python](https://www.python.org/downloads/) installed to run this program. It is included with Mac OS X and most Linux Distros, although you may need to upgrade to a more recent version.
 
-Click on the green Code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`. Or run it however else you want, I don't care, I'm not a cop.
+You will also need the Requests Python module installed to run this program. To install this, open any terminal and type `pip install requests`.
+
+Clone this repo or just click on the green Code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`. Or run it however else you want, I don't care, I'm not a cop.
 
 Installation through PyPl soon™
 

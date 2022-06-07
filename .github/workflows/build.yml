@@ -1,7 +1,7 @@
 name: Build Workflow
 
 on:
-  push:
+  #push:
 
 jobs:
   build-windows:
