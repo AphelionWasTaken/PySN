@@ -1,3 +1,2 @@
 requests
 pyinstaller>=4.3
-clint

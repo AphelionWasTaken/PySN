@@ -1,9 +1,8 @@
-import math
 import hmac
 import json
 import hashlib
 import requests
-from clint.textui import progress
+import math
 import xml.etree.ElementTree as ET
 from os import makedirs, path
 #This is always a good sign:
@@ -45,17 +44,11 @@ while(loop=='Y'):
                     makedirs(download_path)
                 for item in root.iter('package'):
                     url = (item.get('url'))
-                    r = requests.get(url, stream = True)
                     update_file = path.basename(url)
                     print('downloading ' + update_file)
-
-                    with open(download_path + '/' + update_file,'wb') as f:
-                        update_size =int(r.headers['Content-Length'])
-                        for chunk in progress.bar(r.iter_content(chunk_size=1024), expected_size=(update_size/1024) + 1): 
-                            if chunk:
-                                f.write(chunk)
-                                f.flush()
-                print('Finished.')                
+                    open(download_path + '/' + update_file,'wb').write(requests.get(url, stream = True).content)
+                print('Finished.')
+                
         else: print('No updates available for this game.')
 
     else:
@@ -87,17 +80,11 @@ while(loop=='Y'):
                         makedirs(download_path)
                     for item in root.iter('package'):
                         url = (item.get('url'))
-                        r = requests.get(url, stream = True)
                         update_file = path.basename(url)
                         print('downloading ' + update_file)
-
-                        with open(download_path + '/' + update_file,'wb') as f:
-                            update_size =int(r.headers['Content-Length'])
-                            for chunk in progress.bar(r.iter_content(chunk_size=1024), expected_size=(update_size/1024) + 1): 
-                                if chunk:
-                                    f.write(chunk)
-                                    f.flush()
-                    print('Finished.')  
+                        open(download_path + '/' + update_file,'wb').write(requests.get(url, stream = True).content)
+                    print('Finished.')
+                    
             else: print('No updates available for this game.')
 
         else:
@@ -137,21 +124,15 @@ while(loop=='Y'):
                             man_url = (item.get('manifest_url'))
                             json_url = requests.get(man_url, stream = True)
                             json_cont = json.loads(json_url.content)
-
                             for item in (json_cont['pieces']):
                                 url = (item['url'])
-                                r = requests.get(url, stream = True)
                                 update_file = path.basename(url)
                                 print('downloading ' + update_file)
-
-                                with open(download_path + '/' + update_file,'wb') as f:
-                                    update_size =int(r.headers['Content-Length'])
-                                    for chunk in progress.bar(r.iter_content(chunk_size=1024), expected_size=(update_size/1024) + 1): 
-                                        if chunk:
-                                            f.write(chunk)
-                                            f.flush()
-                        print('Finished.')       
+                                open(download_path + '/' + update_file,'wb').write(requests.get(url, stream = True).content)
+                        print('Finished.')
+                        
                 else: print('No updates available for this game.')
+
             else: print('Invalid Title ID.')
 
     loop = input('Check for more updates? Y/N: ').upper()
