@@ -1,18 +1,20 @@
 name: Build Workflow
 
 on:
-  #push:
+  pull_request:
+    types: [closed]
 
 jobs:
   build-windows:
-    runs-on: windows-2019
+    if: github.event.pull_request.merged == true
+    runs-on: [windows-latest]
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       - name: Install Python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.10'
+          python-version: '3.9'
           architecture: 'x64'
       - name: Install requirements
         run: |
@@ -31,10 +33,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.run_number }}
-          release_name: Attempt ${{ github.run_number }}
+          tag_name: v1.0.0
+          release_name: v1.0.0
           body: |
-            ${{ github.event.message }}
+            Robust enough to call it a true "Alpha", v1.0.0 of PySN comes jam-packed with new features such as:
+            
+              - A download progress bar
           draft: false
           prerelease: false
       - name: Upload Release Asset
