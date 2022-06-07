@@ -21,11 +21,14 @@ jobs:
           pip install -r requirements.txt
       - name: Run PyInstaller
         run: |
-          python -m PyInstaller pysn.spec
+          pyinstaller --onefile PySN.py
+      - name: Zip
+        run: |
+          Compress-Archive -LiteralPath dist/PySN.exe -DestinationPath pysn.zip
       - uses: actions/upload-artifact@v2
         with:
-          name: pysn
-          path: dist/pysn.exe
+          name: pysn.zip
+          path: pysn.zip
 
       - name: create release
         id: create_release
@@ -39,6 +42,8 @@ jobs:
             Robust enough to call it a true "Alpha", v1.0.0 of PySN comes jam-packed with new features such as:
             
               - A download progress bar
+
+            Also, the Windows build comes in a cool .zip folder now so that you don't need to make a new folder to keep things organized. Windows has also recently started flagging this as a Trojan, so that's a neat new "feature" I guess.
           draft: false
           prerelease: false
       - name: Upload Release Asset
@@ -48,6 +53,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{steps.create_release.outputs.upload_url}}
-          asset_path: dist/pysn.exe
-          asset_name: PySN.exe
+          asset_path: pysn.zip
+          asset_name: pysn.zip
           asset_content_type: application/zip
