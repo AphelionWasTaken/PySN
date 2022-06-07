@@ -1,34 +1,29 @@
 name: Build Workflow
 
 on:
-  pull_request:
-    types: [closed]
+  #push:
 
 jobs:
   build-windows:
-    if: github.event.pull_request.merged == true
-    runs-on: [windows-latest]
+    runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v1
       - name: Install Python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.9'
+          python-version: '3.10'
           architecture: 'x64'
       - name: Install requirements
         run: |
           pip install -r requirements.txt
       - name: Run PyInstaller
         run: |
-          pyinstaller --onefile PySN.py
-      - name: Zip
-        run: |
-          Compress-Archive -LiteralPath dist/PySN.exe -DestinationPath pysn.zip
+          python -m PyInstaller pysn.spec
       - uses: actions/upload-artifact@v2
         with:
-          name: pysn.zip
-          path: pysn.zip
+          name: pysn
+          path: dist/pysn.exe
 
       - name: create release
         id: create_release
@@ -36,12 +31,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v1.0.0
-          release_name: v1.0.0
+          tag_name: ${{ github.run_number }}
+          release_name: Attempt ${{ github.run_number }}
           body: |
-            Eats more ass than ever before!
-
-            Except that once...
+            ${{ github.event.message }}
           draft: false
           prerelease: false
       - name: Upload Release Asset
@@ -51,6 +44,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{steps.create_release.outputs.upload_url}}
-          asset_path: pysn.zip
-          asset_name: pysn.zip
+          asset_path: dist/pysn.exe
+          asset_name: PySN.exe
           asset_content_type: application/zip
