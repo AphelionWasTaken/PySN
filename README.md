@@ -5,7 +5,7 @@ Installation
 ============
 Windows
 ------------------------
-Just download PySN.exe from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest). You may want to put it in a new folder after you've downloaded it.
+Just download PySN.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest) and extract the contents to a folder somewhere.
 
 Linux/BSD/Mac OS
 ------------------------
