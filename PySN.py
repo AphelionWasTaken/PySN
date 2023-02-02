@@ -185,7 +185,7 @@ def main():
         download_path = create_vita_directories(title_id, game_name)
         download_vita_ps3_updates(root, download_path)
     else:
-        print ('\nInvalid ID')
+        print('\nInvalid ID')
         return graceful_exit() 
     
 main()
