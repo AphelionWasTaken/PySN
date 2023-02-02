@@ -10,9 +10,9 @@ jobs:
     runs-on: [windows-latest]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: '3.9'
           architecture: 'x64'
@@ -25,23 +25,26 @@ jobs:
       - name: Zip
         run: |
           Compress-Archive -Path "build/exe.win-amd64-3.9/*" -DestinationPath PySN.zip
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: PySN.zip
           path: PySN.zip
-
       - name: create release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v1.0.1
-          release_name: v1.0.1
+          tag_name: v1.1.0
+          release_name: v1.1.0
           body: |
-            Now comes packaged with dependencies in a seperate folder rather than bundled into the executable.
+            Refactored with functions! This should be a bit cleaner under the hood, relatively speaking. It should also be a bit easier to wrap this in a GUI at some point.
 
-            Windows Defender approves of this update.
+            Changes:
+            - PySN now automatically detects which console your game is for. This should speed up searches compared to looking for updates across all 3 consoles.
+            - I've added some spacing to the outputs, which makes things easier to read in my opinion.
+            - Error handling has been improved.
+            - cx_Freeze now creates license file automatically, as the license terms require that it be included with any program built/"frozen" with cx_Freeze.
           draft: false
           prerelease: false
       - name: Upload Release Asset
