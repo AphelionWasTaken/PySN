@@ -17,7 +17,7 @@ def graceful_exit():
         print('')
         return main()
     else:
-        print ('\nInvalid input')
+        print('\nInvalid input')
         return graceful_exit()
 
 def request_ps3_update(title_id):
@@ -30,10 +30,10 @@ def request_ps3_update(title_id):
             titleid = item.get('titleid')  
         print('\nFound update(s) for: ' + titleid + ' ' + name +'\n')
     elif var_url.status_code == 200 and var_url.text == '':
-        print ('\nNo updates available for this game')
+        print('\nNo updates available for this game')
         return graceful_exit()
     else:
-        print ('\nInvalid ID')
+        print('\nInvalid ID')
         return graceful_exit()
     return root, name
 
@@ -50,10 +50,10 @@ def request_ps4_update(title_id):
             titleid = item.get('titleid')  
         print('\nFound update(s) for: ' + titleid + ' ' + name + '\n')
     elif var_url.status_code == 200 and var_url.text == '':
-        print ('\nNo updates available for this game')
+        print('\nNo updates available for this game')
         return graceful_exit()
     else:
-        print ('\nInvalid ID')
+        print('\nInvalid ID')
         return graceful_exit()
     return root, name
 
@@ -70,10 +70,10 @@ def request_vita_update(title_id):
             titleid = item.get('titleid')  
         print('\nFound update(s) for: ' + titleid + ' ' + name + '\n')
     elif var_url.status_code == 200 and var_url.text == '':
-        print ('\nNo updates available for this game')
+        print('\nNo updates available for this game')
         return graceful_exit()
     else:
-        print ('\nInvalid ID')
+        print('\nInvalid ID')
         return graceful_exit()
     return root, name
 
