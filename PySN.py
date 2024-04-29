@@ -84,6 +84,12 @@ def list_vita_ps3_updates(root):
         update_size =int((requests.get(url, stream=True)).headers['Content-Length'])
         print(update_file)
         print('Size: ' + str(math.ceil(update_size/1024)) + 'KB')
+    for item in root.iter('url'):
+        url = (item.get('url'))
+        update_file = path.basename(url)
+        update_size =int((requests.get(url, stream=True)).headers['Content-Length'])
+        print(update_file + ' (DRM Free)')
+        print('Size: ' + str(math.ceil(update_size/1024)) + 'KB')
 
 def list_ps4_updates(root):
     for item in root.iter('package'):
@@ -140,6 +146,17 @@ def download_vita_ps3_updates(root, download_path):
         update_file = path.basename(url)
         print('Downloading ' + update_file)
         with open(download_path + '/' + update_file,'wb') as f:
+            update_size =int(r.headers['Content-Length'])
+            for chunk in progress.bar(r.iter_content(chunk_size=1024), expected_size=(update_size/1024) + 1): 
+                if chunk:
+                    f.write(chunk)
+                    f.flush()
+    for item in root.iter('url'):
+        url = (item.get('url'))
+        r = requests.get(url, stream = True)
+        update_file = path.basename(url)
+        print('Downloading ' + update_file + ' (DRM Free)')
+        with open(download_path + '/' + '(DRM Free) ' + update_file,'wb') as f:
             update_size =int(r.headers['Content-Length'])
             for chunk in progress.bar(r.iter_content(chunk_size=1024), expected_size=(update_size/1024) + 1): 
                 if chunk:
