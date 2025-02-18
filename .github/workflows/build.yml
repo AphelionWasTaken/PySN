@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.0.0
-          release_name: v2.0.0
+          tag_name: v2.0.1
+          release_name: v2.0.1
           body: |
-            Adds a GUI.
+            Fixes games.yml parsing.
           draft: false
           prerelease: false
       - name: Upload Release Asset
