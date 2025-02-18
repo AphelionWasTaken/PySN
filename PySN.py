@@ -279,7 +279,7 @@ class App(customtkinter.CTk):
             self.search(title_id, console, clear)
         else:
             console = "PlayStation 3"
-            with open(rpcs3_dir+"Games.yml", 'r') as f:
+            with open(rpcs3_dir+"config/games.yml", 'r') as f:
                 file = yaml.safe_load(f)
                 alist = list(file)
                 for index in alist:
