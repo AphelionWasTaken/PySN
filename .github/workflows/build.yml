@@ -21,7 +21,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run pyinstaller
         run: |
-          pyinstaller gui.py -w --onefile --icon="AphIcon.ico"
+          pyinstaller PySN.py -w --onefile --icon="AphIcon.ico"
       - name: Zip
         run: |
           Compress-Archive -Path "dist/*" -DestinationPath PySN.zip
