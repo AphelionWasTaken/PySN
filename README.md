@@ -1,24 +1,40 @@
 # PySN
 A simple tool for downloading Title Updates for PlayStation 3, PlayStation 4, and PlayStation Vita games.
 
+If you prefer the command line version of this tool, it can be found [here](https://github.com/AphelionWasTaken/PySN_CMD).
+
 Installation
 ============
 Windows
 ------------------------
-Just download PySN.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest) and extract the folder.
+Just download PySN.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest), extract the folder, and run the .exe.
 
 Linux/BSD/Mac OS
 ------------------------
 This program uses Python 3. You must have [Python](https://www.python.org/downloads/) installed to run this program. It is included with Mac OS X and most Linux Distros, although you may need to upgrade to a more recent version.
 
-You will also need the Requests and Clint Python modules installed to run this program. To install these, open any terminal and type `pip install requests` and `pip install clint`, respectively.
+You will also need the Requests, CustomTkinter, and PyYaml Python modules installed to run this program. To install these, open any terminal and type `pip install requests`, `pip install customtkinter`, and `pip install pyyaml`, respectively.
 
 Clone this repo or just click on the green Code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`. Or run it however else you want, I don't care, I'm not a cop.
 
 Using PySN
 ============
-Once the program is open, just type a valid PS3, PS4, or PS Vita Title ID (e.g. BCUS98114) into the console and press enter.
+Once the program is open, just type a valid PS3, PS4, or PS Vita Title ID (e.g. BCUS98114) into the search bar, select the proper console from the dropdown menu, and hit "Search".
 
-This script will then locate any Title Updates for that game, and ask you if you would like to download them. Replying with y/Y will download all of the updates found for that game, and then it will ask if you would like to search for another game. Replying with y/Y will prompt you for another Title ID, while any other input will close the program.
+This program will then locate any Title Updates for that game, list them out, and ask you if you would like to download them.
 
-Title Updates are downloaded into an Updates folder within the PySN directory, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/BCUS98114 Gran Turismo 5`). Maybe someday I will let you change that without making you dig into the code...
+By default, Title Updates are downloaded into an Updates folder within the PySN directory, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/BCUS98114 Gran Turismo 5`). You can change the update folder location in the settings, but your updates will always be separated out by console and game.
+
+You can also point PySN to your RPCS3 installation via the settings. If you do so, you can then check the "Search Games.yml" box and hit "Search" to find updates for all of the games you have in RPCS3 at once.
+
+Known Bugs
+============
+Keep your eye on the Issues page for anything not listed here.
+- Sometimes the Download All button just doesn't download all of the updates. Not sure why, as it should iterate through all of the buttons in the array. Just double check that it didn't miss anything if you use this feature.
+- If you manage to keep a partially downloaded file (i.e. by closing PySN in the middle of a download), it will show up as "already owned" when you search for it again. I just need to run a hash or size check when the search runs to fix this.
+
+Contributors
+============
+- [Aphelion](https://github.com/AphelionWasTaken)
+- [GalCiv](https://github.com/RipleyTom) - Thread handling/scheduling
+- [Darkhost](https://github.com/Darkhost1999) - Testing/Bug reporting
