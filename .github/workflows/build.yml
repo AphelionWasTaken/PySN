@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.0.1
-          release_name: v2.0.1
+          tag_name: v2.0.2
+          release_name: v2.0.2
           body: |
-            Fixes games.yml parsing.
+            Fixes hash checking for PS Vita updates.
           draft: false
           prerelease: false
       - name: Upload Release Asset

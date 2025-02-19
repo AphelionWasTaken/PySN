@@ -410,11 +410,11 @@ class App(customtkinter.CTk):
                 self.textbox.open_button_list[index].configure(state='disabled')
                 self.textbox.status_list[index].configure(text_color = 'yellow', text='Checking Hash...')
                 with open(fileloc,'rb') as f:
-                    if console == 'PlayStation 3':
+                    if console == 'PlayStation 3' or console == "PlayStation Vita":
                         data = f.read()[:-32]
                     else: data = f.read()
                     sha1.update(data)
-                if hash == (sha1.hexdigest()):
+                if hash.upper() == (sha1.hexdigest().upper()):
                     self.textbox.status_list[index].configure(text_color = 'green', text='Download Complete!')
                 else:
                     self.textbox.status_list[index].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
