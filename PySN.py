@@ -337,7 +337,7 @@ class App(customtkinter.CTk):
                     sha1 = (item.get('sha1sum'))
                     update_size = int((item.get('size')))
 
-                name = game_name.replace(':', ' -').replace('/', ' ').replace('?', '')
+                name = game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip()
                 download_path = save_dir + console + '/' + title_id + ' ' + name
                 update_file = path.basename(url)      
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, update_file)
