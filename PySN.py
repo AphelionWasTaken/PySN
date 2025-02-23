@@ -354,7 +354,7 @@ class App(customtkinter.CTk):
 
     def search_no_drm(self, title_id, console):
         root, game_name = self.request_update(title_id, console)
-
+        
         if root != 0:
             drm_free_check = False
             element_list = root.findall('.//')
