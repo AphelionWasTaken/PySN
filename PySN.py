@@ -7,6 +7,7 @@ import requests
 import os
 import queue
 import yaml
+from fnmatch import fnmatch
 from configparser import ConfigParser
 import xml.etree.ElementTree as ET
 from os import makedirs, path
@@ -353,19 +354,39 @@ class App(customtkinter.CTk):
 
     def search_no_drm(self, title_id, console):
         root, game_name = self.request_update(title_id, console)
+
         if root != 0:
-            for item in root.iter('package'):
-                ver = 'DRM-Free v' + (item.get('version'))
-            for item in root.iter('url'):
-                index = len(self.textbox.dlbutton_list) 
-                url = (item.get('url'))
-                sha1 = (item.get('sha1sum'))
-                update_size = int((item.get('size')))
-                name = game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip()
-                download_path = save_dir + console + '/' + title_id + ' ' + name
-                update_file = 'DRM-Free ' + path.basename(url)    
-                self.textbox.add_item(game_name, title_id, ' ' + ver, url, console, update_size, sha1, index, download_path, update_file)
-                is_shit_there(self, download_path, index, update_file)
+            drm_free_check = False
+            element_list = root.findall('.//')
+            if fnmatch(str(element_list),'*url*') == True:
+                drm_free_check = True
+
+            if drm_free_check == True:
+                i=0
+                package_list = []
+                index_list = []
+                drmfree_list = []
+                sha1_list = []
+                update_size_list = []
+                name_list = []
+                url_list = []
+            
+                for item in root.iter('package'):
+                    package_list.append(item.get('version'))
+                for item in root.iter('url'):
+                    drmfree_list.append(root.get('url'))
+                    url_list.append(item.get('url'))                
+                    sha1_list.append(item.get('sha1sum'))
+                    update_size_list.append(int((item.get('size'))))
+                    name_list.append(game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip())         
+                for version in package_list:
+                    download_path = (save_dir + console + '/' + title_id + ' ' + name_list[i])
+                    update_file = 'DRM-Free ' + path.basename(url_list[i])
+                    index_list.append(len(self.textbox.dlbutton_list))
+                    self.textbox.add_item(game_name, title_id, ' DRM-Free v' + version, url_list[i], console, update_size_list[i], sha1_list[i], index_list[i], download_path, update_file)
+                    is_shit_there(self, download_path, index_list[i], update_file)
+                    i = i+1
+            else: return
         elif game_name == 'Invalid ID':
             self.textbox.clear_items()
             self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
