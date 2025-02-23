@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.0.5
-          release_name: v2.0.5
+          tag_name: v2.0.6
+          release_name: v2.0.6
           body: |
-            Add support for DRM-Free updates (again) and clean some things up.
+            Fix issue with mislabeled/duplicate version numbers for DRM-free updates.
           draft: false
           prerelease: false
       - name: Upload Release Asset
