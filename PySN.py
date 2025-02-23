@@ -84,7 +84,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.edit_button1 = customtkinter.CTkButton(master=self, width = 50, text='Edit', command = self.button_save_loc)
         self.edit_button1.grid(row=1, padx=5, pady=(0,0), column=4, sticky='new')
 
-        self.rpcs3_dir_label = customtkinter.CTkLabel(master=self, text='Folder containing RPCS3 and Games.yml:', anchor='center')
+        self.rpcs3_dir_label = customtkinter.CTkLabel(master=self, text='Folder containing RPCS3:', anchor='center')
         self.rpcs3_dir_label.grid(row=2, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
 
         self.yaml_dir_field = customtkinter.CTkTextbox(master=self, height=25, width = 400, wrap='none')
@@ -177,7 +177,9 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     #creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
     def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, update_file):
         size = str(round((update_size/1024000),2)) + ' MB'
-        if len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
+        if ver.startswith(' D') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
+            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:9] + '...', anchor='w')
+        elif len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:18] + '...', anchor='w') 
         elif len(name)<=18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
@@ -272,11 +274,13 @@ class App(customtkinter.CTk):
     def open_loc(self, download_path):
         customtkinter.filedialog.askopenfilenames(initialdir=download_path)
 
-    def search_type(self, clear):
+    def search_type(self):
         if self.checkbox.get() == 0:
             title_id = (self.entry.get()).upper()
             console = self.combobox.get()
-            self.search(title_id, console, clear)
+            self.search(title_id, console)
+            if console == 'PlayStation 3':
+                self.search_no_drm(title_id, console)
         else:
             console = 'PlayStation 3'
             with open(rpcs3_dir+'config/games.yml', 'r') as f:
@@ -284,7 +288,8 @@ class App(customtkinter.CTk):
                 alist = list(file)
                 for index in alist:
                     title_id = index
-                    self.search(title_id, console, clear)  
+                    self.search(title_id, console)
+                    self.search_no_drm(title_id, console)  
 
 #assigns hashes and urls based on console, checks if the url is valid, returns the xml root and game name.
     def request_update(self, title_id, console):
@@ -317,7 +322,7 @@ class App(customtkinter.CTk):
                 
     #this should probably be global? or the global shit should go in App?
     #requests game/update info and creates widgets in the frame based on that info.
-    def search(self, title_id, console, clear):
+    def search(self, title_id, console):
         root, game_name = self.request_update(title_id, console)
 
         if root != 0:
@@ -342,10 +347,31 @@ class App(customtkinter.CTk):
                 update_file = path.basename(url)      
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, update_file)
                 is_shit_there(self, download_path, index, update_file)
-
         elif game_name == 'Invalid ID': 
-                self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
+            self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
         else: self.textbox.add_item('No updates available for ' + title_id, '', '', '', '', 0, '', '', '', '')
+
+    def search_no_drm(self, title_id, console):
+        root, game_name = self.request_update(title_id, console)
+        if root != 0:
+            for item in root.iter('package'):
+                ver = 'DRM-Free v' + (item.get('version'))
+            for item in root.iter('url'):
+                index = len(self.textbox.dlbutton_list) 
+                url = (item.get('url'))
+                sha1 = (item.get('sha1sum'))
+                update_size = int((item.get('size')))
+                name = game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip()
+                download_path = save_dir + console + '/' + title_id + ' ' + name
+                update_file = 'DRM-Free ' + path.basename(url)    
+                self.textbox.add_item(game_name, title_id, ' ' + ver, url, console, update_size, sha1, index, download_path, update_file)
+                is_shit_there(self, download_path, index, update_file)
+        elif game_name == 'Invalid ID':
+                self.textbox.clear_items()
+                self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
+        else:
+            self.textbox.clear_items() 
+            self.textbox.add_item('No updates available for ' + title_id, '', '', '', '', 0, '', '', '', '')
     
     def toggle_pause(self, index):
         if self.textbox.dlbutton_list[index].cget('text') == 'Pause':
@@ -438,12 +464,10 @@ class App(customtkinter.CTk):
             self.textbox.destroy()
             self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
             self.textbox.grid(row=1, column=0, columnspan=8, padx=4, pady=0, sticky='ew')
-            clear = False
-            self.search_type(clear)
+            self.search_type()
         else:
             self.textbox.clear_items()
-            clear = True
-            self.search_type(clear)
+            self.search_type()
 
     def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, update_file):
         semaphore = threading.Semaphore(2)

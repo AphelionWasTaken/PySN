@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.0.4
-          release_name: v2.0.4
+          tag_name: v2.0.5
+          release_name: v2.0.5
           body: |
-            OCD code styling changes.
+            Add support for DRM-Free updates (again) and clean some things up.
           draft: false
           prerelease: false
       - name: Upload Release Asset
