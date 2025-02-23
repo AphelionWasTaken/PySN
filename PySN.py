@@ -367,8 +367,8 @@ class App(customtkinter.CTk):
                 self.textbox.add_item(game_name, title_id, ' ' + ver, url, console, update_size, sha1, index, download_path, update_file)
                 is_shit_there(self, download_path, index, update_file)
         elif game_name == 'Invalid ID':
-                self.textbox.clear_items()
-                self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
+            self.textbox.clear_items()
+            self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
         else:
             self.textbox.clear_items() 
             self.textbox.add_item('No updates available for ' + title_id, '', '', '', '', 0, '', '', '', '')
