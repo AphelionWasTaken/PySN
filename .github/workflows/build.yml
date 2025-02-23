@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.0.3
-          release_name: v2.0.3
+          tag_name: v2.0.4
+          release_name: v2.0.4
           body: |
-            Strips game name of leading or trailing spaces to avoid errors when making directories and placing files in them.
+            OCD code styling changes.
           draft: false
           prerelease: false
       - name: Upload Release Asset

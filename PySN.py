@@ -18,7 +18,7 @@ requests.packages.urllib3.disable_warnings()
 def is_shit_there(self, download_path, index, update_file):
     if path.exists(download_path + '/' + update_file):
         self.textbox.dlbutton_list[index].configure(text='Redownload')
-        self.textbox.open_button_list[index].configure(text='Open', state="normal", command=lambda: self.open_loc(download_path))
+        self.textbox.open_button_list[index].configure(text='Open', state='normal', command=lambda: self.open_loc(download_path))
         self.textbox.status_list[index].configure(text_color = 'green', text='Already Owned!')
 
 #creates a directory for the game in the download path.
@@ -33,21 +33,21 @@ class ConfigSettings():
 
     def get_config():
         config = ConfigParser()
-        config.read("config.ini")
-        save_dir = config.get("paths", "downloads")
-        rpcs3_dir = config.get("paths", "RPCS3")
+        config.read('config.ini')
+        save_dir = config.get('paths', 'downloads')
+        rpcs3_dir = config.get('paths', 'RPCS3')
         return save_dir, rpcs3_dir
 
     def save_config(mode, save_dir , rpcs3_dir):
         config = ConfigParser()
-        with open("config.ini", mode) as ini:
-            config.add_section("paths")
-            config.set("paths", "downloads", save_dir)
-            config.set("paths", "RPCS3", rpcs3_dir)
+        with open('config.ini', mode) as ini:
+            config.add_section('paths')
+            config.set('paths', 'downloads', save_dir)
+            config.set('paths', 'RPCS3', rpcs3_dir)
             config.write(ini)
 
     def check_config():
-        normalized_path = os.getcwd().replace("\\","/")
+        normalized_path = os.getcwd().replace('\\','/')
         config_path = (normalized_path + '/config.ini')
         if path.exists(config_path):
             save_dir, rpcs3_dir = ConfigSettings.get_config()
@@ -69,56 +69,56 @@ class SettingsWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.attributes('-topmost', 1)
-        self.geometry("540x320")
+        self.geometry('540x320')
         self.resizable(0,0)
         self.title('Settings')
         self.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.temp_save, self.temp_rpcs3 = ConfigSettings.check_config()
 
-        self.save_dir_label = customtkinter.CTkLabel(master=self, text="Download Update PKGs To This Folder:",justify = 'center', anchor='center')
-        self.save_dir_label.grid(row=0, column=1, columnspan=4, padx=5, pady=(20,0), sticky="sew")
+        self.save_dir_label = customtkinter.CTkLabel(master=self, text='Download Update PKGs To This Folder:',justify = 'center', anchor='center')
+        self.save_dir_label.grid(row=0, column=1, columnspan=4, padx=5, pady=(20,0), sticky='sew')
 
         self.save_dir_field = customtkinter.CTkTextbox(master=self, height=25, wrap='none')
-        self.save_dir_field.grid(row=1, column=1, columnspan=3, padx=5, pady=(0,0), sticky="new")
+        self.save_dir_field.grid(row=1, column=1, columnspan=3, padx=5, pady=(0,0), sticky='new')
         self.edit_button1 = customtkinter.CTkButton(master=self, width = 50, text='Edit', command = self.button_save_loc)
-        self.edit_button1.grid(row=1, padx=5, pady=(0,0), column=4, sticky="new")
+        self.edit_button1.grid(row=1, padx=5, pady=(0,0), column=4, sticky='new')
 
-        self.rpcs3_dir_label = customtkinter.CTkLabel(master=self, text="Folder containing RPCS3 and Games.yml:", anchor='center')
-        self.rpcs3_dir_label.grid(row=2, column=1, columnspan=4, padx=0, pady=(0,0), sticky="sew")
+        self.rpcs3_dir_label = customtkinter.CTkLabel(master=self, text='Folder containing RPCS3 and Games.yml:', anchor='center')
+        self.rpcs3_dir_label.grid(row=2, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
 
         self.yaml_dir_field = customtkinter.CTkTextbox(master=self, height=25, width = 400, wrap='none')
-        self.yaml_dir_field.grid(row=3, column=1, columnspan=3, padx=5, pady=(0,25), sticky="new")
+        self.yaml_dir_field.grid(row=3, column=1, columnspan=3, padx=5, pady=(0,25), sticky='new')
         self.edit_button2 = customtkinter.CTkButton(master=self, width = 50, text='Edit', command = self.button_yml_loc)
-        self.edit_button2.grid(row=3, padx=5, pady=(0,0), column=4, sticky="new")
+        self.edit_button2.grid(row=3, padx=5, pady=(0,0), column=4, sticky='new')
         
         self.save_button = customtkinter.CTkButton(master=self, text='Save', width = 100,  command = self.button_save)
-        self.save_button.grid(row=4, padx=(0,5), column=2, sticky="e")
+        self.save_button.grid(row=4, padx=(0,5), column=2, sticky='e')
         self.cancel_button = customtkinter.CTkButton(master=self, text='Cancel', width = 100, command=self.destroy)
-        self.cancel_button.grid(row=4, padx=(5,135), column=3, columnspan=2, sticky="w")
+        self.cancel_button.grid(row=4, padx=(5,135), column=3, columnspan=2, sticky='w')
        
-        self.save_dir_field.insert("0.0",self.temp_save)
+        self.save_dir_field.insert('0.0',self.temp_save)
         self.save_dir_field.configure(state='disabled')
-        self.yaml_dir_field.insert("0.0",self.temp_rpcs3)
+        self.yaml_dir_field.insert('0.0',self.temp_rpcs3)
         self.yaml_dir_field.configure(state='disabled')
 
     def button_save_loc(self):
         temporary_temp = self.temp_save
         self.temp_save=customtkinter.filedialog.askdirectory(parent = self)
-        if self.temp_save != "":
+        if self.temp_save != '':
             self.save_dir_field.configure(state='normal')
-            self.save_dir_field.delete("0.0","end")
-            self.save_dir_field.insert("0.0", self.temp_save)
+            self.save_dir_field.delete('0.0','end')
+            self.save_dir_field.insert('0.0', self.temp_save)
             self.save_dir_field.configure(state='disabled')
         else: self.temp_save = temporary_temp
 
     def button_yml_loc(self):
         temporary_temp = self.temp_rpcs3
         self.temp_rpcs3=customtkinter.filedialog.askdirectory(parent = self)
-        if self.temp_rpcs3 != "":
+        if self.temp_rpcs3 != '':
             self.yaml_dir_field.configure(state='normal')
-            self.yaml_dir_field.delete("0.0","end")
-            self.yaml_dir_field.insert("0.0", self.temp_rpcs3)
+            self.yaml_dir_field.delete('0.0','end')
+            self.yaml_dir_field.insert('0.0', self.temp_rpcs3)
             self.yaml_dir_field.configure(state='disabled')
         else: self.temp_rpcs3 = temporary_temp
 
@@ -141,21 +141,21 @@ class SettingsWindow(customtkinter.CTkToplevel):
 class DownloadAllWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.geometry("400x240")
+        self.geometry('400x240')
         self.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
 
         self.save_dir_label = customtkinter.CTkLabel(master=self, text='You are about to download all of the updates in the list!\n\n\nContinue?\n', anchor='center')
-        self.save_dir_label.grid(row=1, column=2, columnspan=2, padx=20, pady=0, sticky="ew")
+        self.save_dir_label.grid(row=1, column=2, columnspan=2, padx=20, pady=0, sticky='ew')
 
         self.only_new_check = customtkinter.CTkCheckBox(master=self, text="Only Download Updates That I Don't Have")
-        self.only_new_check.grid(row=2, column=2, columnspan=2, padx=50, sticky="ew")
+        self.only_new_check.grid(row=2, column=2, columnspan=2, padx=50, sticky='ew')
 
         self.save_button = customtkinter.CTkButton(master=self, width = 100, text='Okay')
-        self.save_button.grid(row=4, padx=(55,5), column=2, sticky="e")
+        self.save_button.grid(row=4, padx=(55,5), column=2, sticky='e')
 
         self.cancel_button = customtkinter.CTkButton(master=self, width = 100, text='Cancel', command=self.destroy)
-        self.cancel_button.grid(row=4, padx=(5,55), column=3, sticky="w")
+        self.cancel_button.grid(row=4, padx=(5,55), column=3, sticky='w')
 
 #Frame where all the fun widgets go.
 class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
@@ -177,29 +177,29 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     #creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
     def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, update_file):
         size = str(round((update_size/1024000),2)) + ' MB'
-        if len(name)>18 and not name.startswith("Invalid ID") and not name.startswith('No updates available for') and name != 'No updates found':  
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + " - " + name[:18] + "...", anchor="w") 
-        elif len(name)<=18 and not name.startswith("Invalid ID") and not name.startswith('No updates available for') and name != 'No updates found':
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + " - " + name, anchor="w")
+        if len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
+            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:18] + '...', anchor='w') 
+        elif len(name)<=18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':
+            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
         else:
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor="w")
-        size_label = customtkinter.CTkLabel(self, text=size, anchor="e")
-        status = customtkinter.CTkLabel(self, text='', anchor="e", width = 160)
+            title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor='w')
+        size_label = customtkinter.CTkLabel(self, text=size, anchor='e')
+        status = customtkinter.CTkLabel(self, text='', anchor='e', width = 160)
         q = queue.Queue()
-        dlbutton = customtkinter.CTkButton(self, text="Download", width=100, height=24)
-        open_button = customtkinter.CTkButton(self, text="Open", width=100, height=24, state = "disabled")
+        dlbutton = customtkinter.CTkButton(self, text='Download', width=100, height=24)
+        open_button = customtkinter.CTkButton(self, text='Open', width=100, height=24, state = 'disabled')
         if self.command is not None:
                 dlbutton.configure(command=lambda: self.command(name, title_id, url, console, update_size, sha1, index, download_path, update_file))
                 open_button.configure(command=lambda: self.command(download_path, index, update_file))
         prog_bar = customtkinter.CTkProgressBar(self, width=440, height=5)
         prog_bar.set(0)
-        if not name.startswith("Invalid ID") and not name.startswith('No updates available for') and name != 'No updates found':  
-            title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky="w")
-            status.grid(row=len(self.title_label_list), column=1, pady=(0, 10),padx=(0, 0), sticky="e") 
-            size_label.grid(row=len(self.title_label_list), column=2, padx=(0,5), pady=(0, 10), sticky="e")
-            prog_bar.grid(row=len(self.dlbutton_list), column=0, columnspan=3, pady=(15, 0), sticky="w")
-            dlbutton.grid(row=len(self.dlbutton_list), column=3, pady=(0, 10), padx=0, sticky="e")
-            open_button.grid(row=len(self.dlbutton_list), column=4, pady=(0, 10), padx=(0,0), sticky="e")
+        if not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
+            title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky='w')
+            status.grid(row=len(self.title_label_list), column=1, pady=(0, 10),padx=(0, 0), sticky='e') 
+            size_label.grid(row=len(self.title_label_list), column=2, padx=(0,5), pady=(0, 10), sticky='e')
+            prog_bar.grid(row=len(self.dlbutton_list), column=0, columnspan=3, pady=(15, 0), sticky='w')
+            dlbutton.grid(row=len(self.dlbutton_list), column=3, pady=(0, 10), padx=0, sticky='e')
+            open_button.grid(row=len(self.dlbutton_list), column=4, pady=(0, 10), padx=(0,0), sticky='e')
         else:
             title_label.grid(row=len(self.title_label_list), column=0, columnspan=8, pady=(0, 10))
             
@@ -214,7 +214,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     #iterates through the widgets looking for specific strings. If one is found, the whole line will be deleted.
     def clear_items(self):
         for title_label, size_label, status, dlbutton, open_button, prog_bar, q in zip(self.title_label_list, self.size_label_list, self.status_list, self.dlbutton_list, self.open_button_list, self.prog_bar_list, self.queue_list):
-            if title_label.cget("text").startswith("Invalid ID") or title_label.cget("text").startswith("No updates available for"):
+            if title_label.cget('text').startswith('Invalid ID') or title_label.cget('text').startswith('No updates available for'):
                 title_label.destroy()
                 size_label.destroy()
                 status.destroy()
@@ -235,8 +235,8 @@ class App(customtkinter.CTk):
         super().__init__() 
         width = self.winfo_screenwidth()/3
         height = self.winfo_screenheight()/3
-        self.geometry("760x640")
-        self.title("PySN")
+        self.geometry('760x640')
+        self.title('PySN')
         self.resizable(0,0)
         self.minsize(760, 200)
         self.maxsize(760, 640)
@@ -245,30 +245,30 @@ class App(customtkinter.CTk):
         self.grid_rowconfigure((0, 1, 2), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6, 7), weight=1)
         
-        self.entry = customtkinter.CTkEntry(master=self, placeholder_text="Enter Serial", width = 125)
-        self.entry.grid(row=0, column=0, padx=(4,2), pady=(6,0), sticky="ew")
-        self.combobox = customtkinter.CTkComboBox(master=self, values=["PlayStation 3", "PlayStation 4", "PlayStation Vita"], width = 125)
-        self.combobox.grid(row=0, column=1, columnspan=1, padx=(2,2), pady=(6,0), sticky="ew")
-        self.checkbox = customtkinter.CTkCheckBox(master=self, text="Search Games.yml")
-        self.checkbox.grid(row=0, column=2, columnspan=2, padx=(2,4), pady=(6,0), sticky="w")
-        self.button1 = customtkinter.CTkButton(master=self, command=self.button_search, text="Search", width = 125)
-        self.button1.grid(row=0, column=7, padx=4, pady=(6,0), sticky="ew")
+        self.entry = customtkinter.CTkEntry(master=self, placeholder_text='Enter Serial', width = 125)
+        self.entry.grid(row=0, column=0, padx=(4,2), pady=(6,0), sticky='ew')
+        self.combobox = customtkinter.CTkComboBox(master=self, values=['PlayStation 3', 'PlayStation 4', 'PlayStation Vita'], width = 125)
+        self.combobox.grid(row=0, column=1, columnspan=1, padx=(2,2), pady=(6,0), sticky='ew')
+        self.checkbox = customtkinter.CTkCheckBox(master=self, text='Search Games.yml')
+        self.checkbox.grid(row=0, column=2, columnspan=2, padx=(2,4), pady=(6,0), sticky='w')
+        self.button1 = customtkinter.CTkButton(master=self, command=self.button_search, text='Search', width = 125)
+        self.button1.grid(row=0, column=7, padx=4, pady=(6,0), sticky='ew')
         
         self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-        self.textbox.grid(row=1, column=0, columnspan=8, padx=4,  pady=(0,0), sticky="ew")
+        self.textbox.grid(row=1, column=0, columnspan=8, padx=4,  pady=(0,0), sticky='ew')
 
-        self.button2 = customtkinter.CTkButton(master=self, command=self.button_downall, text="Download All", width = 125)
-        self.button2.grid(row=2, column=0, padx=(4,2), pady=(0,6), sticky="ew")
-        self.button3 = customtkinter.CTkButton(master=self, command=self.button_clear, text="Clear", width = 125)
-        self.button3.grid(row=2, column=1, padx=(2,2), pady=(0,6), sticky="ew")
-        self.clearbox = customtkinter.CTkCheckBox(master=self, text="Clear List On Search")
-        self.clearbox.grid(row=2, column=2, columnspan=2, padx=(2,4), pady=(0,6), sticky="w")
+        self.button2 = customtkinter.CTkButton(master=self, command=self.button_downall, text='Download All', width = 125)
+        self.button2.grid(row=2, column=0, padx=(4,2), pady=(0,6), sticky='ew')
+        self.button3 = customtkinter.CTkButton(master=self, command=self.button_clear, text='Clear', width = 125)
+        self.button3.grid(row=2, column=1, padx=(2,2), pady=(0,6), sticky='ew')
+        self.clearbox = customtkinter.CTkCheckBox(master=self, text='Clear List On Search')
+        self.clearbox.grid(row=2, column=2, columnspan=2, padx=(2,4), pady=(0,6), sticky='w')
         self.clearbox.select()
-        self.button4 = customtkinter.CTkButton(master=self, command=self.button_settings, text="Settings", width = 125 )
-        self.button4.grid(row=2, column=7, padx=4, pady=(0,6), sticky="ew")
+        self.button4 = customtkinter.CTkButton(master=self, command=self.button_settings, text='Settings', width = 125 )
+        self.button4.grid(row=2, column=7, padx=4, pady=(0,6), sticky='ew')
     
     #If you want to clear the text box, the search button will destroy it and recreate it, then search.
-    #Otherwise it will clear labels such as "Invalid ID" before appending the list.
+    #Otherwise it will clear labels such as 'Invalid ID' before appending the list.
     def open_loc(self, download_path):
         customtkinter.filedialog.askopenfilenames(initialdir=download_path)
 
@@ -278,8 +278,8 @@ class App(customtkinter.CTk):
             console = self.combobox.get()
             self.search(title_id, console, clear)
         else:
-            console = "PlayStation 3"
-            with open(rpcs3_dir+"config/games.yml", 'r') as f:
+            console = 'PlayStation 3'
+            with open(rpcs3_dir+'config/games.yml', 'r') as f:
                 file = yaml.safe_load(f)
                 alist = list(file)
                 for index in alist:
@@ -291,11 +291,11 @@ class App(customtkinter.CTk):
         root = 0
         id = bytes('np_' + title_id, 'UTF-8')
 
-        if console == "PlayStation Vita":
+        if console == 'PlayStation Vita':
             key = bytearray.fromhex('E5E278AA1EE34082A088279C83F9BBC806821C52F2AB5D2B4ABD995450355114')
             hash = (hmac.new(key, id, hashlib.sha256).hexdigest())
             xml_url = ('https://gs-sec.ww.np.dl.playstation.net/pl/np/' + title_id + '/' + hash + '/' + title_id + '-ver.xml')
-        elif console == "PlayStation 4":
+        elif console == 'PlayStation 4':
             key = bytearray.fromhex('AD62E37F905E06BC19593142281C112CEC0E7EC3E97EFDCAEFCDBAAFA6378D84')
             hash = (hmac.new(key, id, hashlib.sha256).hexdigest())
             xml_url = ('https://gs-sec.ww.np.dl.playstation.net/plo/np/' + title_id + '/' + hash + '/' + title_id + '-ver.xml')
@@ -324,7 +324,7 @@ class App(customtkinter.CTk):
             for item in root.iter('package'):
                 index = len(self.textbox.dlbutton_list)
                 ver = (item.get('version'))
-                if console == "PlayStation 4":
+                if console == 'PlayStation 4':
                     man_url = (item.get('manifest_url'))
                     json_url = requests.get(man_url, stream = True)
                     json_cont = json.loads(json_url.content)
@@ -343,12 +343,12 @@ class App(customtkinter.CTk):
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, update_file)
                 is_shit_there(self, download_path, index, update_file)
 
-        elif game_name == "Invalid ID": 
+        elif game_name == 'Invalid ID': 
                 self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
         else: self.textbox.add_item('No updates available for ' + title_id, '', '', '', '', 0, '', '', '', '')
     
     def toggle_pause(self, index):
-        if self.textbox.dlbutton_list[index].cget("text") == 'Pause':
+        if self.textbox.dlbutton_list[index].cget('text') == 'Pause':
             self.textbox.dlbutton_list[index].configure(text='Resume')
             self.textbox.queue_list[index].put(ButtonAction.PAUSE)
         else:
@@ -363,7 +363,7 @@ class App(customtkinter.CTk):
         with sem:
             create_directories(download_path)
             self.textbox.dlbutton_list[index].configure(text='Pause', command=lambda: self.toggle_pause(index))
-            self.textbox.open_button_list[index].configure(text='Cancel', state = "normal", command=lambda: self.cancel(index))
+            self.textbox.open_button_list[index].configure(text='Cancel', state = 'normal', command=lambda: self.cancel(index))
             sha1 = hashlib.sha1()
             fileloc = (download_path + '/' + update_file)
             i=0
@@ -401,8 +401,8 @@ class App(customtkinter.CTk):
                         else: break
 
             self.textbox.dlbutton_list[index].configure(command=lambda: App.frame_button_download(self, name, title_id, url, console, size, hash, index, download_path, update_file))
-            self.textbox.open_button_list[index].configure(text='Open', state = "disabled", command=lambda: None)
-            if self.textbox.status_list[index].cget("text") == 'Download Cancelled!':
+            self.textbox.open_button_list[index].configure(text='Open', state = 'disabled', command=lambda: None)
+            if self.textbox.status_list[index].cget('text') == 'Download Cancelled!':
                 os.remove(fileloc)
             else:
                 is_shit_there(self, download_path, index, update_file)   
@@ -410,7 +410,7 @@ class App(customtkinter.CTk):
                 self.textbox.open_button_list[index].configure(state='disabled')
                 self.textbox.status_list[index].configure(text_color = 'yellow', text='Checking Hash...')
                 with open(fileloc,'rb') as f:
-                    if console == 'PlayStation 3' or console == "PlayStation Vita":
+                    if console == 'PlayStation 3' or console == 'PlayStation Vita':
                         data = f.read()[:-32]
                     else: data = f.read()
                     sha1.update(data)
@@ -437,7 +437,7 @@ class App(customtkinter.CTk):
         if self.clearbox.get() == 1:
             self.textbox.destroy()
             self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-            self.textbox.grid(row=1, column=0, columnspan=8, padx=4, pady=0, sticky="ew")
+            self.textbox.grid(row=1, column=0, columnspan=8, padx=4, pady=0, sticky='ew')
             clear = False
             self.search_type(clear)
         else:
@@ -464,7 +464,7 @@ class App(customtkinter.CTk):
     def button_clear(self):
         self.textbox.destroy()
         self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-        self.textbox.grid(row=1, column=0, columnspan=8, padx=4, pady=0, sticky="ew")
+        self.textbox.grid(row=1, column=0, columnspan=8, padx=4, pady=0, sticky='ew')
 
     #opens the settings window.
     def button_settings(self):
@@ -477,6 +477,6 @@ class App(customtkinter.CTk):
 save_dir, rpcs3_dir = ConfigSettings.check_config()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = App()
     app.mainloop()
