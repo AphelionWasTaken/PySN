@@ -15,12 +15,27 @@ from enum import Enum
 
 requests.packages.urllib3.disable_warnings()
 
-#Checks if the download path already exists, changes the buttons accordingly.
-def is_shit_there(self, download_path, index, update_file):
-    if path.exists(download_path + '/' + update_file):
+#Checks if the download path already exists and if hashes match. Changes the buttons and status label accordingly.
+def is_shit_there(self, download_path, index, fileloc, console, sha1):
+    if path.exists(fileloc):
+        hash = hashlib.sha1()
         self.textbox.dlbutton_list[index].configure(text='Redownload')
         self.textbox.open_button_list[index].configure(text='Open', state='normal', command=lambda: self.open_loc(download_path))
-        self.textbox.status_list[index].configure(text_color = 'green', text='Already Owned!')
+        self.textbox.dlbutton_list[index].configure(state='disabled')
+        self.textbox.open_button_list[index].configure(state='disabled')
+        self.textbox.status_list[index].configure(text_color = 'yellow', text='Checking Hash...')
+        with open(fileloc,'rb') as f:
+            if console == 'PlayStation 3' or console == 'PlayStation Vita':
+                data = f.read()[:-32]
+            else: data = f.read()
+            hash.update(data)
+            if sha1.upper() == (hash.hexdigest().upper()):
+                Hash_match = 1
+            else:
+                Hash_match = 2
+        self.textbox.dlbutton_list[index].configure(state='normal')
+        self.textbox.open_button_list[index].configure(state='normal')
+        return Hash_match
 
 #Creates a directory for the game in the download path.
 def create_directories(download_path):
@@ -188,7 +203,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         self.prog_bar_list = []
 
     #Creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
-    def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, update_file):
+    def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, fileloc):
 
         #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
         if ver.startswith(' D') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
@@ -212,8 +227,8 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
 
         #Configures the buttons to take a command with appropriate variables. Places all of the widgets on the grid.
         if self.command is not None:
-                dlbutton.configure(command=lambda: self.command(name, title_id, url, console, update_size, sha1, index, download_path, update_file))
-                open_button.configure(command=lambda: self.command(download_path, index, update_file))
+                dlbutton.configure(command=lambda: self.command(name, title_id, url, console, update_size, sha1, index, download_path, fileloc))
+                open_button.configure(command=lambda: self.command(download_path, index, fileloc))
         if not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
             title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky='w')
             status.grid(row=len(self.title_label_list), column=1, pady=(0, 10),padx=(0, 0), sticky='e') 
@@ -363,9 +378,17 @@ class App(customtkinter.CTk):
                 #Assign a download path with some handling for odd characters in the game name. Add Widgets to the textbox and check if the file already exists.
                 name = game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip()
                 download_path = save_dir + console + '/' + title_id + ' ' + name
-                update_file = path.basename(url)      
-                self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, update_file)
-                is_shit_there(self, download_path, index, update_file)
+                update_file = path.basename(url)
+                fileloc = (download_path + '/' + update_file) 
+                self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
+                
+                #Check the hash in case an incomplete or corrupt file already exists. Then handle errors in search results.
+                Hash_match = is_shit_there(self, download_path, index, fileloc, console, sha1)
+                if Hash_match == 1:
+                    self.textbox.status_list[index].configure(text_color = 'green', text='Already Owned!')
+                elif Hash_match == 2:
+                    self.textbox.status_list[index].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
+                else: pass               
         elif game_name == 'Invalid ID': 
             self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
         else: self.textbox.add_item('No updates available for ' + title_id, '', '', '', '', 0, '', '', '', '')
@@ -405,12 +428,20 @@ class App(customtkinter.CTk):
                 for version in package_list:
                     download_path = (save_dir + console + '/' + title_id + ' ' + name_list[i])
                     update_file = 'DRM-Free ' + path.basename(url_list[i])
+                    fileloc = (download_path + '/' + update_file)
                     index_list.append(len(self.textbox.dlbutton_list))
-                    self.textbox.add_item(game_name, title_id, ' DRM-Free v' + version, url_list[i], console, update_size_list[i], sha1_list[i], index_list[i], download_path, update_file)
-                    is_shit_there(self, download_path, index_list[i], update_file)
+                    self.textbox.add_item(game_name, title_id, ' DRM-Free v' + version, url_list[i], console, update_size_list[i], sha1_list[i], index_list[i], download_path, fileloc)
+                    
+                    #Check the hash in case an incomplete or corrupt file already exists. Errors in search results are handled by the other search, so we just pass here.
+                    Hash_match = is_shit_there(self, download_path, index_list[i], fileloc, console, sha1_list[i])
+                    if Hash_match == 1:
+                        self.textbox.status_list[index_list[i]].configure(text_color = 'green', text='Already Owned!')
+                    elif Hash_match == 2:
+                        self.textbox.status_list[index_list[i]].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
+                    else: pass  
                     i = i+1
-            else: return
-        else: return
+            else: pass
+        else: pass
     
     #Pauses and resumes download and sends pause message to the queue.
     def toggle_pause(self, index):
@@ -427,13 +458,11 @@ class App(customtkinter.CTk):
         self.textbox.queue_list[index].put(ButtonAction.STOP)
     
     #Creates directories, updates buttons, downloads the update file, and checks the hash.
-    def download_updates(self, url, download_path, size, hash, index, title_id, name, console, update_file, sem):
+    def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem):
         with sem:
             create_directories(download_path)
             self.textbox.dlbutton_list[index].configure(text='Pause', command=lambda: self.toggle_pause(index))
             self.textbox.open_button_list[index].configure(text='Cancel', state = 'normal', command=lambda: self.cancel(index))
-            sha1 = hashlib.sha1()
-            fileloc = (download_path + '/' + update_file)
             i=0
             h=0
 
@@ -471,29 +500,19 @@ class App(customtkinter.CTk):
                             if self.textbox.queue_list[index].empty() == False: break
                         else: break
 
-            #After the file is downloaded, reconfigure the dl and open button behavior
-            self.textbox.dlbutton_list[index].configure(command=lambda: App.frame_button_download(self, name, title_id, url, console, size, hash, index, download_path, update_file))
-            self.textbox.open_button_list[index].configure(text='Open', state = 'disabled', command=lambda: None)
-
-            #Remove the file if the dl was cancelled. If it completed, run is_shit_there to configure some buttons, then disable them, check the hash, and re-enable the buttons.
+            #After the file is downloaded, reconfigure the dl and open button behavior.
+            #Then remove the file if the dl was cancelled. If it completed, run is_shit_there to check the hash and configure buttons properly.
+            self.textbox.dlbutton_list[index].configure(command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
+            self.textbox.open_button_list[index].configure(text='Open', state = 'disabled', command=lambda: None)            
             if self.textbox.status_list[index].cget('text') == 'Download Cancelled!':
                 os.remove(fileloc)
             else:
-                is_shit_there(self, download_path, index, update_file)   
-                self.textbox.dlbutton_list[index].configure(state='disabled')
-                self.textbox.open_button_list[index].configure(state='disabled')
-                self.textbox.status_list[index].configure(text_color = 'yellow', text='Checking Hash...')
-                with open(fileloc,'rb') as f:
-                    if console == 'PlayStation 3' or console == 'PlayStation Vita':
-                        data = f.read()[:-32]
-                    else: data = f.read()
-                    sha1.update(data)
-                if hash.upper() == (sha1.hexdigest().upper()):
+                Hash_match = is_shit_there(self, download_path, index, fileloc, console, sha1)
+                if Hash_match == 1:
                     self.textbox.status_list[index].configure(text_color = 'green', text='Download Complete!')
-                else:
+                elif Hash_match == 2:
                     self.textbox.status_list[index].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
-                self.textbox.dlbutton_list[index].configure(state='normal')
-                self.textbox.open_button_list[index].configure(state='normal')
+                else: pass
 
     #Downloads all files, or only new files based on the check box in the downall window. Pretty sure it belongs in the DownloadAllWindow class.
     def downall(self):
@@ -519,9 +538,9 @@ class App(customtkinter.CTk):
             self.search_type()
 
     #Behavior for the Download button.
-    def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, update_file):
+    def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):
         semaphore = threading.Semaphore(2)
-        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, update_file, semaphore), daemon = True).start()
+        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, semaphore), daemon = True).start()
 
     #Behavior for the Download All button. Opens the download all window.
     def button_downall(self):

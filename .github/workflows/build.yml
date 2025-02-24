@@ -35,10 +35,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.0.8
-          release_name: v2.0.8
+          tag_name: v2.0.9
+          release_name: v2.0.9
           body: |
-            Fix indices getting messed up when scraping games.yml.
+            Add a hash check when search results are populated to check for existing incomplete/corrupt files.
+
+            This is single threaded, so searching for updates you already own/tried downloading may take a bit longer.
           draft: false
           prerelease: false
       - name: Upload Release Asset
