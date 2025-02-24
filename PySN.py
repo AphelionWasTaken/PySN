@@ -15,23 +15,26 @@ from enum import Enum
 
 requests.packages.urllib3.disable_warnings()
 
-#checks if the download path already exists, changes the buttons accordingly.
+#Checks if the download path already exists, changes the buttons accordingly.
 def is_shit_there(self, download_path, index, update_file):
     if path.exists(download_path + '/' + update_file):
         self.textbox.dlbutton_list[index].configure(text='Redownload')
         self.textbox.open_button_list[index].configure(text='Open', state='normal', command=lambda: self.open_loc(download_path))
         self.textbox.status_list[index].configure(text_color = 'green', text='Already Owned!')
 
-#creates a directory for the game in the download path.
+#Creates a directory for the game in the download path.
 def create_directories(download_path):
     if not path.exists(download_path):
         makedirs(download_path)
     return download_path
 
+
+#Handles the config file.
 class ConfigSettings():
     def __init__(self):
         super().__init__()
 
+    #Gets settings from the config file.
     def get_config():
         config = ConfigParser()
         config.read('config.ini')
@@ -39,6 +42,7 @@ class ConfigSettings():
         rpcs3_dir = config.get('paths', 'RPCS3')
         return save_dir, rpcs3_dir
 
+    #Saves the config file.
     def save_config(mode, save_dir , rpcs3_dir):
         config = ConfigParser()
         with open('config.ini', mode) as ini:
@@ -47,6 +51,7 @@ class ConfigSettings():
             config.set('paths', 'RPCS3', rpcs3_dir)
             config.write(ini)
 
+    #Checks for the config file, and gets the settings from it. Saves default config if none present.
     def check_config():
         normalized_path = os.getcwd().replace('\\','/')
         config_path = (normalized_path + '/config.ini')
@@ -57,15 +62,18 @@ class ConfigSettings():
             rpcs3_dir = 'No Games.yml Location Set!'
             ConfigSettings.save_config('x', save_dir , rpcs3_dir)
         return save_dir, rpcs3_dir
+    
+save_dir, rpcs3_dir = ConfigSettings.check_config()
 
 
+#Used to send messages to the queue
 class ButtonAction(Enum):
     STOP = 1
     PAUSE = 2
     RESUME = 3
 
 
-#window with save and yml locations.
+#Window with save and rpcs3/games.yml locations.
 class SettingsWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -103,6 +111,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.yaml_dir_field.insert('0.0',self.temp_rpcs3)
         self.yaml_dir_field.configure(state='disabled')
 
+    #Button to change update save location. Assigns the chosen path to a temporary variable and populates the text bar with it.
     def button_save_loc(self):
         temporary_temp = self.temp_save
         self.temp_save=customtkinter.filedialog.askdirectory(parent = self)
@@ -113,6 +122,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
             self.save_dir_field.configure(state='disabled')
         else: self.temp_save = temporary_temp
 
+    #Button to change rpcs3 location. Assigns the chosen path to a temporary variable and populates the text bar with it.
     def button_yml_loc(self):
         temporary_temp = self.temp_rpcs3
         self.temp_rpcs3=customtkinter.filedialog.askdirectory(parent = self)
@@ -123,6 +133,8 @@ class SettingsWindow(customtkinter.CTkToplevel):
             self.yaml_dir_field.configure(state='disabled')
         else: self.temp_rpcs3 = temporary_temp
 
+    #Save button. assigns the temp variables to global variables for the save directory.
+    #Some handling to endure the directory is appended with a /.
     def button_save(self):
         global rpcs3_dir
         global save_dir
@@ -134,11 +146,11 @@ class SettingsWindow(customtkinter.CTkToplevel):
             rpcs3_dir = self.temp_rpcs3
         else:
             rpcs3_dir = self.temp_rpcs3 + '/'
-            
         ConfigSettings.save_config('w', save_dir , rpcs3_dir)
         self.destroy()
 
-#Window with dl all options. Need to actually make this work properly (Maybe it does?)
+
+#Download All window. I did not create the downall function as part of this class for whatever reason...
 class DownloadAllWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -158,7 +170,8 @@ class DownloadAllWindow(customtkinter.CTkToplevel):
         self.cancel_button = customtkinter.CTkButton(master=self, width = 100, text='Cancel', command=self.destroy)
         self.cancel_button.grid(row=4, padx=(5,55), column=3, sticky='w')
 
-#Frame where all the fun widgets go.
+
+#Frame where all the fun widgets go. This gets put inside the textbox.
 class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     def __init__(self, master, command=None, **kwargs):
         super().__init__(master, **kwargs)
@@ -166,7 +179,6 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         self.grid_columnconfigure((1), weight=1)
         self.grid_columnconfigure(( 2, 3, 4), weight=0)
         self.command = command
-        self.radiobutton_variable = customtkinter.StringVar()
         self.title_label_list = []
         self.size_label_list = []
         self.status_list = []
@@ -175,9 +187,10 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         self.open_button_list = []
         self.prog_bar_list = []
 
-    #creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
+    #Creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
     def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, update_file):
-        size = str(round((update_size/1024000),2)) + ' MB'
+
+        #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
         if ver.startswith(' D') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:9] + '...', anchor='w')
         elif len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
@@ -186,16 +199,21 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
         else:
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor='w')
+        
+        #Creates labels for size and status, buttons for downloading and opening the file, a progress bar, and establishes the queue for threading.
+        size = str(round((update_size/1024000),2)) + ' MB'
         size_label = customtkinter.CTkLabel(self, text=size, anchor='e')
         status = customtkinter.CTkLabel(self, text='', anchor='e', width = 160)
-        q = queue.Queue()
         dlbutton = customtkinter.CTkButton(self, text='Download', width=100, height=24)
         open_button = customtkinter.CTkButton(self, text='Open', width=100, height=24, state = 'disabled')
+        prog_bar = customtkinter.CTkProgressBar(self, width=440, height=5)
+        prog_bar.set(0)
+        q = queue.Queue()
+
+        #Configures the buttons to take a command with appropriate variables. Places all of the widgets on the grid.
         if self.command is not None:
                 dlbutton.configure(command=lambda: self.command(name, title_id, url, console, update_size, sha1, index, download_path, update_file))
                 open_button.configure(command=lambda: self.command(download_path, index, update_file))
-        prog_bar = customtkinter.CTkProgressBar(self, width=440, height=5)
-        prog_bar.set(0)
         if not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
             title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky='w')
             status.grid(row=len(self.title_label_list), column=1, pady=(0, 10),padx=(0, 0), sticky='e') 
@@ -205,7 +223,8 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
             open_button.grid(row=len(self.dlbutton_list), column=4, pady=(0, 10), padx=(0,0), sticky='e')
         else:
             title_label.grid(row=len(self.title_label_list), column=0, columnspan=8, pady=(0, 10))
-            
+
+        #Appends the list of widgets, so that we can refer to them specifically later.    
         self.title_label_list.append(title_label)
         self.size_label_list.append(size_label)
         self.status_list.append(status)
@@ -214,7 +233,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         self.open_button_list.append(open_button)
         self.prog_bar_list.append(prog_bar)
 
-    #iterates through the widgets looking for specific strings. If one is found, the whole line will be deleted.
+    #Iterates through the widgets looking for specific strings. If one is found, the whole line will be deleted.
     def clear_items(self):
         for title_label, size_label, status, dlbutton, open_button, prog_bar, q in zip(self.title_label_list, self.size_label_list, self.status_list, self.dlbutton_list, self.open_button_list, self.prog_bar_list, self.queue_list):
             if title_label.cget('text').startswith('Invalid ID') or title_label.cget('text').startswith('No updates available for'):
@@ -232,17 +251,14 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
                 self.open_button_list.remove(open_button)
                 self.prog_bar_list.remove(prog_bar)
 
-#main window and some button functionality
+
+#Main window and some button functionality. Vaguely named widgets are in order of how they appear on screen.
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__() 
-        width = self.winfo_screenwidth()/3
-        height = self.winfo_screenheight()/3
         self.geometry('760x640')
         self.title('PySN')
         self.resizable(0,0)
-        self.minsize(760, 200)
-        self.maxsize(760, 640)
         self.toplevel_window = None
         self.stop_down = False
         self.grid_rowconfigure((0, 1, 2), weight=1)
@@ -270,11 +286,12 @@ class App(customtkinter.CTk):
         self.button4 = customtkinter.CTkButton(master=self, command=self.button_settings, text='Settings', width = 125 )
         self.button4.grid(row=2, column=7, padx=4, pady=(0,6), sticky='ew')
     
-    #If you want to clear the text box, the search button will destroy it and recreate it, then search.
-    #Otherwise it will clear labels such as 'Invalid ID' before appending the list.
+    #Opens the file location. Used with the open button.
     def open_loc(self, download_path):
         customtkinter.filedialog.askopenfilenames(initialdir=download_path)
 
+    #If the "search games.yml" box is not checked, assign the title id and console based on the users input, the search. If the console is PS3, search for DRM-free updates too.
+    #If the "search games.yml" box is checked, automatically assign the console to PS3, and search for each title id on the games.yml.
     def search_type(self):
         if self.checkbox.get() == 0:
             title_id = (self.entry.get()).upper()
@@ -292,7 +309,7 @@ class App(customtkinter.CTk):
                     self.search(title_id, console)
                     self.search_no_drm(title_id, console)  
 
-#assigns hashes and urls based on console, checks if the url is valid, returns the xml root and game name.
+    #Assigns hashes and urls based on console and title id, checks if the url is valid, returns the xml and game name.
     def request_update(self, title_id, console):
         root = 0
         id = bytes('np_' + title_id, 'UTF-8')
@@ -321,11 +338,11 @@ class App(customtkinter.CTk):
         
         return root, name
                 
-    #this should probably be global? or the global shit should go in App?
-    #requests game/update info and creates widgets in the frame based on that info.
+    #Requests game/update info and creates widgets in the frame based on that info.
     def search(self, title_id, console):
         root, game_name = self.request_update(title_id, console)
 
+        #If the xml exists, iterate through the package element to get info about the update. If it's a PS4 title, load and iterate through the JSON for data.
         if root != 0:
             for item in root.iter('package'):
                 index = len(self.textbox.dlbutton_list)
@@ -343,6 +360,7 @@ class App(customtkinter.CTk):
                     sha1 = (item.get('sha1sum'))
                     update_size = int((item.get('size')))
 
+                #Assign a download path with some handling for odd characters in the game name. Add Widgets to the textbox and check if the file already exists.
                 name = game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip()
                 download_path = save_dir + console + '/' + title_id + ' ' + name
                 update_file = path.basename(url)      
@@ -352,15 +370,18 @@ class App(customtkinter.CTk):
             self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
         else: self.textbox.add_item('No updates available for ' + title_id, '', '', '', '', 0, '', '', '', '')
 
+    #Searches specifically for PS3 DRM-free update info, and populates the widgets in the frame based on that info.
     def search_no_drm(self, title_id, console):
         root, game_name = self.request_update(title_id, console)
         
+        #If the XML exists, make sure that there is a URL element before continuing.
         if root != 0:
             drm_free_check = False
             element_list = root.findall('.//')
             if fnmatch(str(element_list),'*url*') == True:
                 drm_free_check = True
 
+            #If a URL element is found, create a list for the elements.
             if drm_free_check == True:
                 i=0
                 package_list = []
@@ -371,6 +392,8 @@ class App(customtkinter.CTk):
                 name_list = []
                 url_list = []
             
+                #Append lists with version info from the package element, and update info from the URL element.
+                #Then iterate through the lists for the download path and widget info. Also places widgets in the textbox.
                 for item in root.iter('package'):
                     package_list.append(item.get('version'))
                 for item in root.iter('url'):
@@ -394,6 +417,7 @@ class App(customtkinter.CTk):
             self.textbox.clear_items() 
             self.textbox.add_item('No updates available for ' + title_id, '', '', '', '', 0, '', '', '', '')
     
+    #Pauses and resumes download and sends pause message to the queue.
     def toggle_pause(self, index):
         if self.textbox.dlbutton_list[index].cget('text') == 'Pause':
             self.textbox.dlbutton_list[index].configure(text='Resume')
@@ -402,10 +426,12 @@ class App(customtkinter.CTk):
             self.textbox.dlbutton_list[index].configure(text='Pause')
             self.textbox.queue_list[index].put(ButtonAction.RESUME)
 
+    #Cancels download and sends stop message to the queue.
     def cancel(self, index):
         self.textbox.dlbutton_list[index].configure(text='Download')
         self.textbox.queue_list[index].put(ButtonAction.STOP)
     
+    #Creates directories, updates buttons, downloads the update file, and checks the hash.
     def download_updates(self, url, download_path, size, hash, index, title_id, name, console, update_file, sem):
         with sem:
             create_directories(download_path)
@@ -415,6 +441,8 @@ class App(customtkinter.CTk):
             fileloc = (download_path + '/' + update_file)
             i=0
             h=0
+
+            #send a request to the update files URL. Handle threads and download behavior based on the button state.
             with requests.get(url, stream = True) as r:
                 r.raise_for_status()
                 with open(fileloc,'wb') as f:
@@ -436,6 +464,7 @@ class App(customtkinter.CTk):
                         except queue.Empty:
                             pass
                         
+                        #Download the file and update the progress bar and status label based on how much has downloaded.
                         for chunk in r.iter_content(chunk_size=(1024*1024)):
                             if chunk:
                                 f.write(chunk)
@@ -447,8 +476,11 @@ class App(customtkinter.CTk):
                             if self.textbox.queue_list[index].empty() == False: break
                         else: break
 
+            #After the file is downloaded, reconfigure the dl and open button behavior
             self.textbox.dlbutton_list[index].configure(command=lambda: App.frame_button_download(self, name, title_id, url, console, size, hash, index, download_path, update_file))
             self.textbox.open_button_list[index].configure(text='Open', state = 'disabled', command=lambda: None)
+
+            #Remove the file if the dl was cancelled. If it completed, run is_shit_there to configure some buttons, then disable them, check the hash, and re-enable the buttons.
             if self.textbox.status_list[index].cget('text') == 'Download Cancelled!':
                 os.remove(fileloc)
             else:
@@ -468,8 +500,7 @@ class App(customtkinter.CTk):
                 self.textbox.dlbutton_list[index].configure(state='normal')
                 self.textbox.open_button_list[index].configure(state='normal')
 
-    #Downloads all files, or only new files based on the check box in the downall window.
-    #pretty sure this shit should be in the window class...
+    #Downloads all files, or only new files based on the check box in the downall window. Pretty sure it belongs in the DownloadAllWindow class.
     def downall(self):
         self.toplevel_window.destroy()
         if self.toplevel_window.only_new_check.get() == 0:
@@ -480,6 +511,8 @@ class App(customtkinter.CTk):
                 if item.cget('text') == 'Download':
                     item.invoke()
 
+    #If you want to clear the frame on each search, the search button will destroy it and recreate it, then search.
+    #Otherwise it will clear error labels such as 'Invalid ID' before appending the list.
     def button_search(self):
         if self.clearbox.get() == 1:
             self.textbox.destroy()
@@ -490,11 +523,12 @@ class App(customtkinter.CTk):
             self.textbox.clear_items()
             self.search_type()
 
+    #Behavior for the Download button.
     def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, update_file):
         semaphore = threading.Semaphore(2)
         threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, update_file, semaphore), daemon = True).start()
 
-    #opens the download all window.
+    #Behavior for the Download All button. Opens the download all window.
     def button_downall(self):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = DownloadAllWindow(self)  # create window if it's None or destroyed
@@ -505,21 +539,18 @@ class App(customtkinter.CTk):
         else:
             self.toplevel_window.focus()  # if window exists focus it
 
-    #clears the list.            
+    #Behavior for the Clear button. Clears the list.            
     def button_clear(self):
         self.textbox.destroy()
         self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
         self.textbox.grid(row=1, column=0, columnspan=8, padx=4, pady=0, sticky='ew')
 
-    #opens the settings window.
+    #Behavior for the Settings button. Opens the settings window.
     def button_settings(self):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = SettingsWindow(self)
         else:
             self.toplevel_window.focus()
-
-
-save_dir, rpcs3_dir = ConfigSettings.check_config()
 
 
 if __name__ == '__main__':
