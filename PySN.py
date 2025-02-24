@@ -410,12 +410,7 @@ class App(customtkinter.CTk):
                     is_shit_there(self, download_path, index_list[i], update_file)
                     i = i+1
             else: return
-        elif game_name == 'Invalid ID':
-            self.textbox.clear_items()
-            self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
-        else:
-            self.textbox.clear_items() 
-            self.textbox.add_item('No updates available for ' + title_id, '', '', '', '', 0, '', '', '', '')
+        else: return
     
     #Pauses and resumes download and sends pause message to the queue.
     def toggle_pause(self, index):

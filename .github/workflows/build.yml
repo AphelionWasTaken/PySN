@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.0.7
-          release_name: v2.0.7
+          tag_name: v2.0.8
+          release_name: v2.0.8
           body: |
-            Add lots of comments. Some cleanup.
+            Fix indices getting messed up when scraping games.yml.
           draft: false
           prerelease: false
       - name: Upload Release Asset
