@@ -30,8 +30,7 @@ You can also point PySN to your RPCS3 installation via the settings. If you do s
 Known Bugs
 ============
 Keep your eye on the Issues page for anything not listed here.
-- Sometimes the Download All button just doesn't download all of the updates. Not sure why, as it should iterate through all of the buttons in the array. Just double check that it didn't miss anything if you use this feature.
-- If you manage to keep a partially downloaded file (i.e. by closing PySN in the middle of a download), it will show up as "already owned" when you search for it again. I just need to run a hash or size check when the search runs to fix this.
+- Sometimes the Download All button just doesn't download all of the updates. Not sure why, as it should iterate through all of the buttons in the array. Pretty sure it's a threading issue. Just double check that it didn't miss anything if you use this feature.
 
 Contributors
 ============
