@@ -7,6 +7,7 @@ import requests
 import os
 import queue
 import yaml
+import time
 from fnmatch import fnmatch
 from configparser import ConfigParser
 import xml.etree.ElementTree as ET
@@ -460,7 +461,8 @@ class App(customtkinter.CTk):
     #Creates directories, updates buttons, downloads the update file, and checks the hash.
     def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem):
         with sem:
-            create_directories(download_path)
+            if path.exists(download_path) == False:
+                create_directories(download_path)
             self.textbox.dlbutton_list[index].configure(text='Pause', command=lambda: self.toggle_pause(index))
             self.textbox.open_button_list[index].configure(text='Cancel', state = 'normal', command=lambda: self.cancel(index))
             i=0
@@ -541,6 +543,8 @@ class App(customtkinter.CTk):
     def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):
         semaphore = threading.Semaphore(2)
         threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, semaphore), daemon = True).start()
+        time.sleep(.001)
+        
 
     #Behavior for the Download All button. Opens the download all window.
     def button_downall(self):
