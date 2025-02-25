@@ -27,11 +27,6 @@ By default, Title Updates are downloaded into an Updates folder within the PySN 
 
 You can also point PySN to your RPCS3 installation via the settings. If you do so, you can then check the "Search Games.yml" box and hit "Search" to find updates for all of the games you have in RPCS3 at once.
 
-Known Bugs
-============
-Keep your eye on the Issues page for anything not listed here.
-- Sometimes the Download All button just doesn't download all of the updates. Not sure why, as it should iterate through all of the buttons in the array. Pretty sure it's a threading issue. Just double check that it didn't miss anything if you use this feature.
-
 Contributors
 ============
 - [Aphelion](https://github.com/AphelionWasTaken)
