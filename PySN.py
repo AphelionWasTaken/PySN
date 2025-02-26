@@ -191,9 +191,7 @@ class DownloadAllWindow(customtkinter.CTkToplevel):
 class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     def __init__(self, master, command=None, **kwargs):
         super().__init__(master, **kwargs)
-        self.grid_columnconfigure((0), weight=1)
-        self.grid_columnconfigure((1), weight=1)
-        self.grid_columnconfigure(( 2, 3, 4), weight=0)
+        self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.command = command
         self.title_label_list = []
         self.size_label_list = []
@@ -214,11 +212,11 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         elif len(name)<=18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
         else:
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor='w')
+            title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor='center')
         
         #Creates labels for size and status, buttons for downloading and opening the file, a progress bar, and establishes the queue for threading.
         size = str(round((update_size/1024000),2)) + ' MB'
-        size_label = customtkinter.CTkLabel(self, text=size, anchor='e')
+        size_label = customtkinter.CTkLabel(self, text=size, anchor='e', width = 70)
         status = customtkinter.CTkLabel(self, text='', anchor='e', width = 160)
         dlbutton = customtkinter.CTkButton(self, text='Download', width=100, height=24)
         open_button = customtkinter.CTkButton(self, text='Open', width=100, height=24, state = 'disabled')
@@ -232,11 +230,11 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
                 open_button.configure(command=lambda: self.command(download_path, index, fileloc))
         if not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
             title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky='w')
-            status.grid(row=len(self.title_label_list), column=1, pady=(0, 10),padx=(0, 0), sticky='e') 
-            size_label.grid(row=len(self.title_label_list), column=2, padx=(0,5), pady=(0, 10), sticky='e')
+            status.grid(row=len(self.title_label_list), column=2, pady=(0, 10),padx=(0, 0), sticky='e') 
+            size_label.grid(row=len(self.title_label_list), column=3, padx=(10, 5), pady=(0, 10), sticky='e')
             prog_bar.grid(row=len(self.dlbutton_list), column=0, columnspan=3, pady=(15, 0), sticky='w')
-            dlbutton.grid(row=len(self.dlbutton_list), column=3, pady=(0, 10), padx=0, sticky='e')
-            open_button.grid(row=len(self.dlbutton_list), column=4, pady=(0, 10), padx=(0,0), sticky='e')
+            dlbutton.grid(row=len(self.dlbutton_list), column=4, pady=(0, 10), padx=0, sticky='e')
+            open_button.grid(row=len(self.dlbutton_list), column=5, pady=(0, 10), padx=(0, 0), sticky='e')
         else:
             title_label.grid(row=len(self.title_label_list), column=0, columnspan=8, pady=(0, 10))
 

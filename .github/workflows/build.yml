@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.0.10
-          release_name: v2.0.10
+          tag_name: v2.0.11
+          release_name: v2.0.11
           body: |
-            Add an imperceivable delay after the download function is called. This should fix the inconsistent nature of the download all button.
+            Update padding and columns in the textbox frame. Aligns text better and makes things look nicer.
           draft: false
           prerelease: false
       - name: Upload Release Asset
