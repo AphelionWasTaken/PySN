@@ -19,7 +19,7 @@ Clone this repo or just click on the green Code button and download the zip fold
 
 Using PySN
 ============
-Once the program is open, just type a valid PS3, PS4, or PS Vita Title ID (e.g. BCUS98114) into the search bar, select the proper console from the dropdown menu, and hit "Search".
+Once the program is open, just type a valid PS3, PS4, or PS Vita Title ID (e.g. BCUS98114) into the search bar, select the proper console from the dropdown menu, and then hit the "Enter" key or the "Search" button.
 
 This program will then locate any Title Updates for that game, list them out, and ask you if you would like to download them.
 
