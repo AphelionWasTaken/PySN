@@ -269,7 +269,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
 #Main window and some button functionality. Vaguely named widgets are in order of how they appear on screen.
 class App(customtkinter.CTk):
     def __init__(self):
-        super().__init__() 
+        super().__init__()
         self.geometry('760x640')
         self.title('PySN')
         self.resizable(0,0)
@@ -277,6 +277,7 @@ class App(customtkinter.CTk):
         self.stop_down = False
         self.grid_rowconfigure((0, 1, 2), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6, 7), weight=1)
+        self.bind('<Return>', lambda event: self.button_search())
         
         self.entry = customtkinter.CTkEntry(master=self, placeholder_text='Enter Serial', width = 125)
         self.entry.grid(row=0, column=0, padx=(4,2), pady=(6,0), sticky='ew')
