@@ -456,9 +456,9 @@ class App(customtkinter.CTk):
         
         #Set the game name so it shows up nicely in the UI. Establish a list of known firmware locales.
         if console == 'PlayStation Vita':
-            locale_list = ["us", "eu", "jp", "kr", "uk", "mx", "au", "sa", "tw", "ru", "cn"]
+            locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn']
         else:
-            locale_list = ["us", "eu", "jp", "kr", "uk", "mx", "au", "sa", "tw", "ru", "cn", "br"]
+            locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn', 'br']
 
         #if the console is PS3, split the text in the text file by ; and pull strings that match certain criteria.
         if console == 'PlayStation 3':
@@ -508,7 +508,7 @@ class App(customtkinter.CTk):
                 root = ET.fromstring(var_url.content)
                 for item in root.iter('image'):
                     update_size_list.append(int(item.get('size')))
-                    url_list.append(("".join(item.itertext())[:-8].strip()))
+                    url_list.append((''.join(item.itertext())[:-8].strip()))
                     for item in root.iter('region'):
                         region_list.append(item.get('id').upper())
                     
