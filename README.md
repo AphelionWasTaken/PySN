@@ -1,5 +1,5 @@
 # PySN
-A simple tool for downloading Title Updates for PlayStation 3, PlayStation 4, and PlayStation Vita games.
+A simple tool for downloading Title Updates and Firmware for PlayStation 3, PlayStation 4, and PlayStation Vita games.
 
 If you prefer the command line version of this tool, it can be found [here](https://github.com/AphelionWasTaken/PySN_CMD).
 
@@ -26,6 +26,8 @@ This program will then locate any Title Updates for that game, list them out, an
 By default, Title Updates are downloaded into an Updates folder within the PySN directory, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/BCUS98114 Gran Turismo 5`). You can change the update folder location in the settings, but your updates will always be separated out by console and game.
 
 You can also point PySN to your RPCS3 installation via the settings. If you do so, you can then check the "Search Games.yml" box and hit "Search" to find updates for all of the games you have in RPCS3 at once.
+
+If you want to download firmware, just type in "fw" or "firmware" and hit enter or click the search button.
 
 Contributors
 ============
