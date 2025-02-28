@@ -1,5 +1,5 @@
 # PySN
-A simple tool for downloading Title Updates and Firmware for PlayStation 3, PlayStation 4, and PlayStation Vita games.
+A simple tool for downloading Title Updates for PlayStation 3, PlayStation 4, and PlayStation Vita games, as well as Firmware for those systems.
 
 If you prefer the command line version of this tool, it can be found [here](https://github.com/AphelionWasTaken/PySN_CMD).
 
