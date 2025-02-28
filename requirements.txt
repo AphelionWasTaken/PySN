@@ -2,3 +2,4 @@ requests
 pyinstaller>=4.3
 customtkinter
 pyyaml
+BeautifulSoup4

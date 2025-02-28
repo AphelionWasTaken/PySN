@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.0.12
-          release_name: v2.0.12
+          tag_name: v2.1.0
+          release_name: v2.1.0
           body: |
-            Bind Enter key to search.
+            Add support for downloading firmware.
           draft: false
           prerelease: false
       - name: Upload Release Asset

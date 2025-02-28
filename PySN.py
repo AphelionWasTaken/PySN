@@ -13,6 +13,7 @@ from configparser import ConfigParser
 import xml.etree.ElementTree as ET
 from os import makedirs, path
 from enum import Enum
+from bs4 import BeautifulSoup
 
 requests.packages.urllib3.disable_warnings()
 
@@ -20,23 +21,25 @@ requests.packages.urllib3.disable_warnings()
 def is_shit_there(self, download_path, index, fileloc, console, sha1):
     if path.exists(fileloc):
         hash = hashlib.sha1()
+        hash_match = 1
         self.textbox.dlbutton_list[index].configure(text='Redownload')
         self.textbox.open_button_list[index].configure(text='Open', state='normal', command=lambda: self.open_loc(download_path))
-        self.textbox.dlbutton_list[index].configure(state='disabled')
-        self.textbox.open_button_list[index].configure(state='disabled')
-        self.textbox.status_list[index].configure(text_color = 'yellow', text='Checking Hash...')
-        with open(fileloc,'rb') as f:
-            if console == 'PlayStation 3' or console == 'PlayStation Vita':
-                data = f.read()[:-32]
-            else: data = f.read()
-            hash.update(data)
-            if sha1.upper() == (hash.hexdigest().upper()):
-                Hash_match = 1
-            else:
-                Hash_match = 2
+        if sha1 != 'N/A':
+            self.textbox.dlbutton_list[index].configure(state='disabled')
+            self.textbox.open_button_list[index].configure(state='disabled')
+            self.textbox.status_list[index].configure(text_color = 'yellow', text='Checking Hash...')
+            with open(fileloc,'rb') as f:
+                if console == 'PlayStation 3' or console == 'PlayStation Vita':
+                    data = f.read()[:-32]
+                else: data = f.read()
+                hash.update(data)
+                if sha1.upper() == (hash.hexdigest().upper()):
+                    hash_match = 1
+                else:
+                    hash_match = 2
         self.textbox.dlbutton_list[index].configure(state='normal')
         self.textbox.open_button_list[index].configure(state='normal')
-        return Hash_match
+        return hash_match
 
 #Creates a directory for the game in the download path.
 def create_directories(download_path):
@@ -205,7 +208,9 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, fileloc):
 
         #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
-        if ver.startswith(' D') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
+        if len(title_id) == 2:  
+            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
+        elif ver.startswith(' D') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:9] + '...', anchor='w')
         elif len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:18] + '...', anchor='w') 
@@ -311,9 +316,12 @@ class App(customtkinter.CTk):
         if self.checkbox.get() == 0:
             title_id = (self.entry.get()).upper()
             console = self.combobox.get()
-            self.search(title_id, console)
-            if console == 'PlayStation 3':
-                self.search_no_drm(title_id, console)
+            if title_id.upper() == 'FIRMWARE' or title_id.upper() == 'FW':
+                self.search_fw(title_id, console)
+            else:
+                self.search(title_id, console)
+                if console == 'PlayStation 3':
+                    self.search_no_drm(title_id, console)
         else:
             console = 'PlayStation 3'
             with open(rpcs3_dir+'config/games.yml', 'r') as f:
@@ -383,10 +391,10 @@ class App(customtkinter.CTk):
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
                 
                 #Check the hash in case an incomplete or corrupt file already exists. Then handle errors in search results.
-                Hash_match = is_shit_there(self, download_path, index, fileloc, console, sha1)
-                if Hash_match == 1:
+                hash_match = is_shit_there(self, download_path, index, fileloc, console, sha1)
+                if hash_match == 1:
                     self.textbox.status_list[index].configure(text_color = 'green', text='Already Owned!')
-                elif Hash_match == 2:
+                elif hash_match == 2:
                     self.textbox.status_list[index].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
                 else: pass               
         elif game_name == 'Invalid ID': 
@@ -433,16 +441,114 @@ class App(customtkinter.CTk):
                     self.textbox.add_item(game_name, title_id, ' DRM-Free v' + version, url_list[i], console, update_size_list[i], sha1_list[i], index_list[i], download_path, fileloc)
                     
                     #Check the hash in case an incomplete or corrupt file already exists. Errors in search results are handled by the other search, so we just pass here.
-                    Hash_match = is_shit_there(self, download_path, index_list[i], fileloc, console, sha1_list[i])
-                    if Hash_match == 1:
+                    hash_match = is_shit_there(self, download_path, index_list[i], fileloc, console, sha1_list[i])
+                    if hash_match == 1:
                         self.textbox.status_list[index_list[i]].configure(text_color = 'green', text='Already Owned!')
-                    elif Hash_match == 2:
+                    elif hash_match == 2:
                         self.textbox.status_list[index_list[i]].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
                     else: pass  
                     i = i+1
             else: pass
         else: pass
     
+    #Searches for firmware info, and populates the widgets in the frame based on that info.
+    def search_fw(self, title_id, console):
+        
+        #Set the game name so it shows up nicely in the UI. Establish a list of known firmware locales.
+        if console == 'PlayStation Vita':
+            locale_list = ["us", "eu", "jp", "kr", "uk", "mx", "au", "sa", "tw", "ru", "cn"]
+        else:
+            locale_list = ["us", "eu", "jp", "kr", "uk", "mx", "au", "sa", "tw", "ru", "cn", "br"]
+
+        #if the console is PS3, split the text in the text file by ; and pull strings that match certain criteria.
+        if console == 'PlayStation 3':
+            for locale in locale_list:
+                txt_url = 'http://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
+                var_url = requests.get(txt_url, stream = True, verify=False)
+                if var_url.status_code == 200 and var_url.text != '':
+                    soup = BeautifulSoup(var_url.text, 'html.parser')
+                    text = soup.string.split(';')
+                    for item in text:
+                        if fnmatch(str(item),'*CompatibleSystemSoftwareVersion*') == True:
+                            ver = item[32:36]
+                        if fnmatch(str(item),'*# *') == True:
+                            region = item[2:4].upper()
+                        if fnmatch(str(item),'*UPDAT.PUP') == True:
+                            url = item[4:]
+                            update_url = requests.get(url, stream=True)
+                            update_size = int(update_url.headers.get('Content-Length'))  
+
+                #There's no hash to check, so sha1 gets assigned N/A. Title ID becomes region for formatting. set paths and populate widgets.
+                sha1 = 'N/A'
+                index = len(self.textbox.dlbutton_list)
+                title_id = region
+                game_name = console + ' Firmware'
+                download_path = save_dir + console + '/' + game_name + '/' + region
+                update_file = 'v' + ver + ' ' + path.basename(url)
+                fileloc = (download_path + '/' + update_file) 
+                self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
+        
+        #if the console is PS4 or Vita, we can parse through some XML.
+        else:
+            update_size_list = []
+            url_list = []
+            ver_list = []
+            index_list = []
+            region_list = []
+            update_data_list = []
+            i=0
+
+            #Gets XML and parses through certain elements to populate the lists above.
+            for locale in locale_list:
+                if console == 'PlayStation Vita':
+                    xml_url = 'http://f' + locale + '01.psp2.update.playstation.net/update/psp2/list/' + locale + '/psp2-updatelist.xml'
+                else:
+                    xml_url = 'http://f' + locale + '01.ps4.update.playstation.net/update/ps4/list/' + locale + '/ps4-updatelist.xml'
+                var_url = requests.get(xml_url, stream = True, verify=False)
+                root = ET.fromstring(var_url.content)
+                for item in root.iter('image'):
+                    update_size_list.append(int(item.get('size')))
+                    url_list.append(("".join(item.itertext())[:-8].strip()))
+                    for item in root.iter('region'):
+                        region_list.append(item.get('id').upper())
+                    
+                    if console == 'PlayStation Vita':   
+                        for item in root.iter('version'):
+                            ver_list.append(item.get('label'))
+                        for item in root.iter('update_data'):
+                            update_data_list.append(item.get('update_type'))
+                        for item in root.iter('recovery'):
+                            update_data_list.append(item.get('spkg_type'))
+                    else:
+                        for item in root.iter('system_pup'):
+                            ver_list.append(item.get('label'))
+                        for item in root.iter('update_data'):
+                            update_data_list.append(item.get('update_type'))
+                        for item in root.iter('recovery_pup'):
+                            update_data_list.append(item.get('type'))
+
+            #Do some renaming so we know what we're actually looking at in the UI.
+            for url in url_list:
+                if update_data_list[i] == 'full':
+                    update_data_list[i] = 'Firmware'
+                elif update_data_list[i] == 'systemdata':
+                    update_data_list[i] = 'Fonts'
+                elif update_data_list[i] == 'preinst':
+                    update_data_list[i] = 'Preinst'
+                elif update_data_list[i] == 'default':
+                    update_data_list[i] = 'Recovery'
+
+                #Assign hash to N/A, assign title_id to region and make the game name look nice.
+                sha1 = 'N/A'
+                index_list.append(len(self.textbox.dlbutton_list))
+                title_id = region_list[i]
+                game_name = console + ' ' + update_data_list[i]
+                download_path = save_dir + console + '/' + console + ' Firmware' + '/' + region_list[i]
+                update_file = 'v' + ver_list[i] + ' ' + update_data_list[i] + ' ' + path.basename(url)
+                fileloc = (download_path + '/' + update_file)
+                self.textbox.add_item(game_name, title_id, ' v' + ver_list[i], url, console, update_size_list[i], sha1, index_list[i], download_path, fileloc)
+                i = i+1
+
     #Pauses and resumes download and sends pause message to the queue.
     def toggle_pause(self, index):
         if self.textbox.dlbutton_list[index].cget('text') == 'Pause':
@@ -508,10 +614,10 @@ class App(customtkinter.CTk):
             if self.textbox.status_list[index].cget('text') == 'Download Cancelled!':
                 os.remove(fileloc)
             else:
-                Hash_match = is_shit_there(self, download_path, index, fileloc, console, sha1)
-                if Hash_match == 1:
+                hash_match = is_shit_there(self, download_path, index, fileloc, console, sha1)
+                if hash_match == 1:
                     self.textbox.status_list[index].configure(text_color = 'green', text='Download Complete!')
-                elif Hash_match == 2:
+                elif hash_match == 2:
                     self.textbox.status_list[index].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
                 else: pass
 
