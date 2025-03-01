@@ -281,7 +281,7 @@ class App(customtkinter.CTk):
         self.toplevel_window = None
         self.stop_down = False
         self.grid_rowconfigure((0, 1, 2), weight=1)
-        self.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6, 7), weight=1)
+        self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
         self.bind('<Return>', lambda event: self.button_search())
         
         self.entry = customtkinter.CTkEntry(master=self, placeholder_text='Enter Serial', width = 125)
@@ -292,10 +292,10 @@ class App(customtkinter.CTk):
         self.checkbox = customtkinter.CTkCheckBox(master=self, text='Search Games.yml')
         self.checkbox.grid(row=0, column=2, columnspan=2, padx=(2,4), pady=(6,0), sticky='w')
         self.button1 = customtkinter.CTkButton(master=self, command=self.button_search, text='Search', width = 125)
-        self.button1.grid(row=0, column=7, padx=4, pady=(6,0), sticky='ew')
+        self.button1.grid(row=0, column=4, padx=4, pady=(6,0), sticky='ew')
         
         self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-        self.textbox.grid(row=1, column=0, columnspan=8, padx=4,  pady=(0,0), sticky='ew')
+        self.textbox.grid(row=1, column=0, columnspan=5, padx=4,  pady=(0,0), sticky='ew')
 
         self.button2 = customtkinter.CTkButton(master=self, command=self.button_downall, text='Download All', width = 125)
         self.button2.grid(row=2, column=0, padx=(4,2), pady=(0,6), sticky='ew')
@@ -305,7 +305,7 @@ class App(customtkinter.CTk):
         self.clearbox.grid(row=2, column=2, columnspan=2, padx=(2,4), pady=(0,6), sticky='w')
         self.clearbox.select()
         self.button4 = customtkinter.CTkButton(master=self, command=self.button_settings, text='Settings', width = 125 )
-        self.button4.grid(row=2, column=7, padx=4, pady=(0,6), sticky='ew')
+        self.button4.grid(row=2, column=4, padx=4, pady=(0,6), sticky='ew')
     
     #Opens the file location. Used with the open button.
     def open_loc(self, download_path):
@@ -639,7 +639,7 @@ class App(customtkinter.CTk):
         if self.clearbox.get() == 1:
             self.textbox.destroy()
             self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-            self.textbox.grid(row=1, column=0, columnspan=8, padx=4, pady=0, sticky='ew')
+            self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=0, sticky='ew')
             self.search_type()
         else:
             self.textbox.clear_items()
@@ -667,7 +667,7 @@ class App(customtkinter.CTk):
     def button_clear(self):
         self.textbox.destroy()
         self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-        self.textbox.grid(row=1, column=0, columnspan=8, padx=4, pady=0, sticky='ew')
+        self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=0, sticky='ew')
 
     #Behavior for the Settings button. Opens the settings window.
     def button_settings(self):

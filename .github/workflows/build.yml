@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.4
-          release_name: v2.1.4
+          tag_name: v2.1.5
+          release_name: v2.1.5
           body: |
-            use https for firmware.
+            Reduce columns in the main window (no visible changes to the user).
           draft: false
           prerelease: false
       - name: Upload Release Asset
