@@ -464,7 +464,7 @@ class App(customtkinter.CTk):
         #if the console is PS3, split the text in the text file by ; and pull strings that match certain criteria.
         if console == 'PlayStation 3':
             for locale in locale_list:
-                txt_url = 'http://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
+                txt_url = 'https://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
                 var_url = requests.get(txt_url, stream = True, verify=False)
                 if var_url.status_code == 200 and var_url.text != '':
                     soup = BeautifulSoup(var_url.text, 'html.parser')
@@ -502,9 +502,9 @@ class App(customtkinter.CTk):
             #Gets XML and parses through certain elements to populate the lists above.
             for locale in locale_list:
                 if console == 'PlayStation Vita':
-                    xml_url = 'http://f' + locale + '01.psp2.update.playstation.net/update/psp2/list/' + locale + '/psp2-updatelist.xml'
+                    xml_url = 'https://f' + locale + '01.psp2.update.playstation.net/update/psp2/list/' + locale + '/psp2-updatelist.xml'
                 else:
-                    xml_url = 'http://f' + locale + '01.ps4.update.playstation.net/update/ps4/list/' + locale + '/ps4-updatelist.xml'
+                    xml_url = 'https://f' + locale + '01.ps4.update.playstation.net/update/ps4/list/' + locale + '/ps4-updatelist.xml'
                 var_url = requests.get(xml_url, stream = True, verify=False)
                 root = ET.fromstring(var_url.content)
                 for item in root.iter('image'):
