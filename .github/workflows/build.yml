@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.1
-          release_name: v2.1.1
+          tag_name: v2.1.2
+          release_name: v2.1.2
           body: |
-            Minor cleanup.
+            Add more robust handling for firmware searches.
           draft: false
           prerelease: false
       - name: Upload Release Asset

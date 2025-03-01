@@ -208,7 +208,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, fileloc):
 
         #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
-        if len(title_id) == 2:  
+        if len(title_id) == 2 and sha1 == 'N/A':
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
         elif ver.startswith(' D') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:9] + '...', anchor='w')
