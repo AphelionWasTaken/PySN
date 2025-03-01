@@ -288,6 +288,7 @@ class App(customtkinter.CTk):
         self.entry.grid(row=0, column=0, padx=(4,2), pady=(6,0), sticky='ew')
         self.combobox = customtkinter.CTkComboBox(master=self, values=['PlayStation 3', 'PlayStation 4', 'PlayStation Vita'], width = 125)
         self.combobox.grid(row=0, column=1, columnspan=1, padx=(2,2), pady=(6,0), sticky='ew')
+        self.combobox.configure(state = 'readonly')
         self.checkbox = customtkinter.CTkCheckBox(master=self, text='Search Games.yml')
         self.checkbox.grid(row=0, column=2, columnspan=2, padx=(2,4), pady=(6,0), sticky='w')
         self.button1 = customtkinter.CTkButton(master=self, command=self.button_search, text='Search', width = 125)
