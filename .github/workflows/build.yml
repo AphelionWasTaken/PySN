@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.5
-          release_name: v2.1.5
+          tag_name: v2.1.6
+          release_name: v2.1.6
           body: |
-            Reduce columns in the main window (no visible changes to the user).
+            Split the firmware search into multiple funcitons.
           draft: false
           prerelease: false
       - name: Upload Release Asset
