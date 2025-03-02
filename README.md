@@ -1,5 +1,14 @@
 # PySN
-A simple tool for downloading Title Updates for PlayStation 3, PlayStation 4, and PlayStation Vita games, as well as Firmware for those systems.
+PySN is a program which downloads Title Update PKGs and Firmware PUPs for the PlayStation 3, PlayStation 4, and PlayStation Vita directly from Sony's servers.
+
+Features:
+- Windows, Linux, and MacOS support
+- A clean and easy to use GUI
+- SHA-1 hash verification of downloads and owned files
+- Ability to search RPCS3's games.yml
+- Support for DRM-Free Title Updates
+- Most recent Firmware downloads for all 3 consoles
+  - includes PS4 recovery FW, Vita fonts, and Vita preinst FW
 
 If you prefer the command line version of this tool, it can be found [here](https://github.com/AphelionWasTaken/PySN_CMD).
 
@@ -28,6 +37,17 @@ By default, Title Updates are downloaded into an Updates folder within the PySN 
 You can also point PySN to your RPCS3 installation via the settings. If you do so, you can then check the "Search Games.yml" box and hit "Search" to find updates for all of the games you have in RPCS3 at once.
 
 If you want to download firmware, just type in "fw" or "firmware" and hit enter or click the search button.
+
+Screenshots
+============
+<p align="center">
+    <img height = 400 width = 475 src="https://github.com/user-attachments/assets/abe6727c-f83b-4eb8-894b-fdd0203bd064" >
+    <img height = 400 width = 475  src="https://github.com/user-attachments/assets/c956cfef-1644-4a43-accf-2f5fc9503fa3" >
+    <p align="center">
+    <img height = 281.5 width = 400 src="https://github.com/user-attachments/assets/c4fc3cff-4594-4a49-bbb2-4d7e8b6940a1" >
+    <img  height = 281.5 width = 400 src="https://github.com/user-attachments/assets/dbca640a-f7e6-456a-b494-ca7cbc5f830a" >
+</p>
+
 
 Contributors
 ============
