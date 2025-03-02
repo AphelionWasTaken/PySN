@@ -8,7 +8,7 @@ Features:
 - Ability to search RPCS3's games.yml
 - Support for DRM-Free Title Updates
 - Most recent Firmware downloads for all 3 consoles
-  - includes PS4 recovery FW, Vita fonts, and Vita preinst FW
+  - Includes PS4 recovery FW, Vita fonts, and Vita preinst FW
 
 If you prefer the command line version of this tool, it can be found [here](https://github.com/AphelionWasTaken/PySN_CMD).
 
