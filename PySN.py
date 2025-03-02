@@ -318,7 +318,9 @@ class App(customtkinter.CTk):
             title_id = (self.entry.get()).upper()
             console = self.combobox.get()
             if title_id.upper() == 'FIRMWARE' or title_id.upper() == 'FW':
-                self.search_fw(title_id, console)
+                if console == 'PlayStation 3':
+                    self.search_ps3_fw(console)
+                else: self.search_ps4_vita_fw(console)
             else:
                 self.search(title_id, console)
                 if console == 'PlayStation 3':
@@ -356,12 +358,38 @@ class App(customtkinter.CTk):
             for item in root.iter('titlepatch'):
                 title_id = item.get('titleid')
         elif var_url.status_code == 200 and var_url.text == '':
-            name = 'No updates available for this game'
+            name = 'No updates available for '
         else:
             name = 'Invalid ID'
         
         return root, name
-                
+   
+   #Checks if the url is valid, returns a list of xml and txt contents.
+    def request_fw(self, console):
+        root_list = []
+
+        if console == 'PlayStation Vita':
+            locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn']
+        else:
+            locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn', 'br']
+
+        for locale in locale_list:
+            if console == 'PlayStation Vita':
+                info_url = 'https://f' + locale + '01.psp2.update.playstation.net/update/psp2/list/' + locale + '/psp2-updatelist.xml'
+            elif console == 'PlayStation 4':
+                info_url = 'https://f' + locale + '01.ps4.update.playstation.net/update/ps4/list/' + locale + '/ps4-updatelist.xml'
+            else:
+                info_url = 'https://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
+
+            var_url = requests.get(info_url, stream = True, verify=False)
+            if var_url.status_code == 200 and var_url.text != '':
+                if console == 'PlayStation 3':
+                    root_list.append(BeautifulSoup(var_url.text, 'html.parser'))
+                else:
+                    root_list.append(ET.fromstring(var_url.content))
+
+        return root_list
+
     #Requests game/update info and creates widgets in the frame based on that info.
     def search(self, title_id, console):
         root, game_name = self.request_update(title_id, console)
@@ -400,7 +428,7 @@ class App(customtkinter.CTk):
                 else: pass               
         elif game_name == 'Invalid ID': 
             self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
-        else: self.textbox.add_item('No updates available for ' + title_id, '', '', '', '', 0, '', '', '', '')
+        else: self.textbox.add_item(game_name + title_id, '', '', '', '', 0, '', '', '', '')
 
     #Searches specifically for PS3 DRM-free update info, and populates the widgets in the frame based on that info.
     def search_no_drm(self, title_id, console):
@@ -452,34 +480,25 @@ class App(customtkinter.CTk):
             else: pass
         else: pass
     
-    #Searches for firmware info, and populates the widgets in the frame based on that info.
-    def search_fw(self, title_id, console):
-        
-        #Set the game name so it shows up nicely in the UI. Establish a list of known firmware locales.
-        if console == 'PlayStation Vita':
-            locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn']
-        else:
-            locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn', 'br']
+    #Searches for PS3 firmware info, and populates the widgets in the frame based on that info.
+    def search_ps3_fw(self, console):
+        root_list = self.request_fw(console)
 
-        #if the console is PS3, split the text in the text file by ; and pull strings that match certain criteria.
-        if console == 'PlayStation 3':
-            for locale in locale_list:
-                txt_url = 'https://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
-                var_url = requests.get(txt_url, stream = True, verify=False)
-                if var_url.status_code == 200 and var_url.text != '':
-                    soup = BeautifulSoup(var_url.text, 'html.parser')
-                    text = soup.string.split(';')
-                    for item in text:
-                        if fnmatch(str(item),'*CompatibleSystemSoftwareVersion*') == True:
-                            ver = item[32:36]
-                        if fnmatch(str(item),'*# *') == True:
-                            region = item[2:4].upper()
-                        if fnmatch(str(item),'*UPDAT.PUP') == True:
-                            url = item[4:]
-                            update_url = requests.get(url, stream=True)
-                            update_size = int(update_url.headers.get('Content-Length'))  
+        #Split the text in the text file by ; and pull strings that match certain criteria.
+        if root_list:
+            for root in root_list:
+                text = root.string.split(';')
+                for item in text:
+                    if fnmatch(str(item),'*CompatibleSystemSoftwareVersion*') == True:
+                        ver = item[32:36]
+                    if fnmatch(str(item),'*# *') == True:
+                        region = item[2:4].upper()
+                    if fnmatch(str(item),'*UPDAT.PUP') == True:
+                        url = item[4:]
+                        update_url = requests.get(url, stream=True)
+                        update_size = int(update_url.headers.get('Content-Length')) 
 
-                #There's no hash to check, so sha1 gets assigned N/A. Title ID becomes region for formatting. set paths and populate widgets.
+                #There's no hash available to check, so sha1 gets assigned N/A. Title ID becomes region for formatting. set paths and populate widgets.
                 sha1 = 'N/A'
                 index = len(self.textbox.dlbutton_list)
                 title_id = region
@@ -488,25 +507,22 @@ class App(customtkinter.CTk):
                 update_file = 'v' + ver + ' ' + path.basename(url)
                 fileloc = (download_path + '/' + update_file) 
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
-        
-        #if the console is PS4 or Vita, we can parse through some XML.
-        else:
-            update_size_list = []
-            url_list = []
-            ver_list = []
-            index_list = []
-            region_list = []
-            update_data_list = []
-            i=0
+        else: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '')
 
-            #Gets XML and parses through certain elements to populate the lists above.
-            for locale in locale_list:
-                if console == 'PlayStation Vita':
-                    xml_url = 'https://f' + locale + '01.psp2.update.playstation.net/update/psp2/list/' + locale + '/psp2-updatelist.xml'
-                else:
-                    xml_url = 'https://f' + locale + '01.ps4.update.playstation.net/update/ps4/list/' + locale + '/ps4-updatelist.xml'
-                var_url = requests.get(xml_url, stream = True, verify=False)
-                root = ET.fromstring(var_url.content)
+    #Searches for PS4 or Vita update info and populates the widgets in the frame based on that info.
+    def search_ps4_vita_fw(self, console):
+        root_list = self.request_fw(console)
+        update_size_list = []
+        url_list = []
+        ver_list = []
+        index_list = []
+        region_list = []
+        update_data_list = []
+        i=0
+        
+        #Parse the elements of the XML and get their attributes. Also pull the loose text in the xml (this contains the download URLs).
+        if root_list:
+            for root in root_list:
                 for item in root.iter('image'):
                     update_size_list.append(int(item.get('size')))
                     url_list.append((''.join(item.itertext())[:-8].strip()))
@@ -549,6 +565,7 @@ class App(customtkinter.CTk):
                 fileloc = (download_path + '/' + update_file)
                 self.textbox.add_item(game_name, title_id, ' v' + ver_list[i], url, console, update_size_list[i], sha1, index_list[i], download_path, fileloc)
                 i = i+1
+        else: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '')
 
     #Pauses and resumes download and sends pause message to the queue.
     def toggle_pause(self, index):
