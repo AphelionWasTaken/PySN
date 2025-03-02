@@ -41,8 +41,8 @@ If you want to download firmware, just type in "fw" or "firmware" and hit enter 
 Screenshots
 ============
 <p align="center">
-    <img height = 400 width = 475 src="https://github.com/user-attachments/assets/abe6727c-f83b-4eb8-894b-fdd0203bd064" >
-    <img height = 400 width = 475  src="https://github.com/user-attachments/assets/c956cfef-1644-4a43-accf-2f5fc9503fa3" >
+    <img height = 375 width = 445 src="https://github.com/user-attachments/assets/abe6727c-f83b-4eb8-894b-fdd0203bd064" >
+    <img height = 375 width = 445  src="https://github.com/user-attachments/assets/c956cfef-1644-4a43-accf-2f5fc9503fa3" >
     <p align="center">
     <img height = 281.5 width = 400 src="https://github.com/user-attachments/assets/c4fc3cff-4594-4a49-bbb2-4d7e8b6940a1" >
     <img  height = 281.5 width = 400 src="https://github.com/user-attachments/assets/dbca640a-f7e6-456a-b494-ca7cbc5f830a" >
