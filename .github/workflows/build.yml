@@ -35,10 +35,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.6
-          release_name: v2.1.6
+          tag_name: v2.1.7
+          release_name: v2.1.7
           body: |
-            Split the firmware search into multiple funcitons.
+            Update the download bar and status based on actual chunk size.
           draft: false
           prerelease: false
       - name: Upload Release Asset

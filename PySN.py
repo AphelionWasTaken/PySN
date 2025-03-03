@@ -485,7 +485,7 @@ class App(customtkinter.CTk):
         root_list = self.request_fw(console)
 
         #Split the text in the text file by ; and pull strings that match certain criteria.
-        if root_list:
+        if root_list[0] != 0:
             for root in root_list:
                 text = root.string.split(';')
                 for item in text:
@@ -618,8 +618,8 @@ class App(customtkinter.CTk):
                             if chunk:
                                 f.write(chunk)
                                 f.flush()
-                                i = i+(1/(size/(1024*1024)))
-                                h = round(h+((1024*1024)/1024000),2)
+                                i = i+(1/(size/(len(chunk))))
+                                h = round(h+((len(chunk))/1024000),2)
                                 self.textbox.prog_bar_list[index].set(i)
                                 self.textbox.status_list[index].configure(text_color = 'green', text= str(h) + '/' + str(round((size/1024000),2)) + 'MB' )
                             if self.textbox.queue_list[index].empty() == False: break
