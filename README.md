@@ -22,7 +22,7 @@ Linux/BSD/Mac OS
 ------------------------
 This program uses Python 3. You must have [Python](https://www.python.org/downloads/) installed to run this program. It is included with Mac OS and most Linux Distros, although you may need to upgrade to a more recent version.
 
-You will also need the Requests, CustomTkinter, and PyYaml Python modules installed to run this program. To install these, open any terminal and type `pip install requests`, `pip install customtkinter`, and `pip install pyyaml`, respectively.
+You will also need the Requests, CustomTkinter, BeautifulSoup, and PyYaml Python modules installed to run this program. To install these, open any terminal and type `pip install requests`, `pip install customtkinter`, `pip install beautifulsoup4`, and `pip install pyyaml`, respectively.
 
 Clone this repo or just click on the green Code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`. Or run it however else you want, I don't care, I'm not a cop.
 
