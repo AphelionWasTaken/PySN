@@ -46,9 +46,9 @@ If you want to download firmware, just type in "fw" or "firmware" and hit enter 
 
 File Locations
 ------------------------
-On Windows, Title Updates are downloaded into an Updates folder within the PySN directory by default, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/BCUS98114 Gran Turismo 5`). You can change the update folder location in the settings, but your updates will always be separated out by console and game.
+Title Updates are downloaded into an Updates folder within the PySN directory by default, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/BCUS98114 Gran Turismo 5`).
 
-On MacOS, Title Updates and the Config.ini file can be found in your home directory by default. You can change the location for updates in PySN's settings, but they will always be separated by console and game, just like on Windows.
+You can change the update folder location in PySN's settings, but your updates will always be separated out by console and game.
 
 Screenshots
 ============
