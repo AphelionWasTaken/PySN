@@ -16,15 +16,23 @@ Installation
 ============
 Windows
 ------------------------
-Just download PySN.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest), extract the folder, and run the .exe.
+Just download PySN_Windows.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest), extract the folder, and run the .exe.
 
-Linux/BSD/Mac OS
+MacOS
 ------------------------
-This program uses Python 3. You must have [Python](https://www.python.org/downloads/) installed to run this program. It is included with Mac OS and most Linux Distros, although you may need to upgrade to a more recent version.
+Just download PySN_MacOS.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest) and run the executable.
 
-You will also need the Requests, CustomTkinter, BeautifulSoup, and PyYaml Python modules installed to run this program. To install these, open any terminal, navigate to your PySN directory (where requirements.txt exists), and type `pip install -r -requirements.txt`. Or from any location, type `pip install requests`, `pip install customtkinter`, `pip install beautifulsoup4`, and `pip install pyyaml`, respectively.
+Linux/BSD
+------------------------
+This program uses Python 3. You must have [Python](https://www.python.org/downloads/) installed to run this program. It is included with most Linux Distros, although you may need to upgrade to a more recent version.
 
-Clone this repo or just click on the green Code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`. Or run it however else you want, I don't care, I'm not a cop.
+You will also need the Requests, CustomTkinter, BeautifulSoup, and PyYaml Python modules installed to run this program. To install these, open any terminal and type `pip install requests`, `pip install customtkinter`, `pip install beautifulsoup4`, and `pip install pyyaml`, respectively.
+
+If you have already cloned/downloaded this repo, you can easily install all of these modules by navigating to your PySN directory (where requirements.txt exists), and type `pip install -r -requirements.txt`.
+
+Once you have the modules, clone this repo or just click on the green Code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`.
+
+Or run it however else you want, I don't care, I'm not a cop.
 
 Using PySN
 ============
