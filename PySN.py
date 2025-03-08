@@ -72,7 +72,7 @@ class ConfigSettings():
 
     #Checks for the config file, and gets the settings from it. Saves default config if none present.
     def check_config():
-        normalized_path = os.getcwd().replace('\\','/')
+        normalized_path = os.path.dirname(__file__).replace('\\','/')
         config_path = (normalized_path + '/config.ini')
         if path.exists(config_path):
             save_dir, rpcs3_dir = ConfigSettings.get_config()
