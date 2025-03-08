@@ -44,7 +44,7 @@ You can also point PySN to your RPCS3 installation via the settings. If you do s
 
 If you want to download firmware, just type in "fw" or "firmware" and hit enter or click the search button.
 
-File locations
+File Locations
 ------------------------
 On Windows, Title Updates are downloaded into an Updates folder within the PySN directory by default, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/BCUS98114 Gran Turismo 5`). You can change the update folder location in the settings, but your updates will always be separated out by console and game.
 
