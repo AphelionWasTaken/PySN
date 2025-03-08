@@ -5,50 +5,127 @@ on:
     types: [closed]
 
 jobs:
-  build-windows:
+  build_matrix:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-13]
+    
     if: github.event.pull_request.merged == true
-    runs-on: [windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Install Python
+
+      - name: Install Python (MacOS)
+        if: ${{ matrix.os == 'macos-13' }}
+        run: |
+          wget https://www.python.org/ftp/python/3.10.6/python-3.10.6-macos11.pkg
+          sudo installer -verbose -pkg ./python-3.10.6-macos11.pkg -target /
+          echo "/Library/Frameworks/Python.framework/Versions/3.10/bin" >> $GITHUB_PATH
+
+      - name: Install Python (Windows)      
+        if: ${{ matrix.os == 'windows-latest' }}
         uses: actions/setup-python@v2
         with:
           python-version: '3.10'
           architecture: 'x64'
-      - name: Install requirements
+      
+      - name: Install Requirements (MacOS)
+        if: ${{ matrix.os == 'macos-13' }}
+        run: |
+          pip3 install -r requirements.txt
+
+      - name: Install Requirements (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
         run: |
           pip install -r requirements.txt
-      - name: Run pyinstaller
+
+      - name: Run PyInstaller (MacOS)
+        if: ${{ matrix.os == 'macos-13' }}
+        run: |
+          pyinstaller PySN.py -w --onefile
+
+      - name: Run PyInstaller (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
         run: |
           pyinstaller PySN.py -w --onefile --icon="AphIcon.ico"
-      - name: Zip
+
+      - name: Move and Zip (MacOS)
+        if: ${{ matrix.os == 'macos-13' }}
         run: |
-          Compress-Archive -Path "dist/*" -DestinationPath PySN.zip
-      - uses: actions/upload-artifact@v4
+          mkdir macos
+          cp dist/PySN macos
+          (cd macos/ && zip -r -X ../PySN_MacOS.zip .)
+
+      - name: Move and Zip (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: |
+          mkdir windows
+          cp dist/PySN.exe windows
+          Compress-Archive -Path "windows/*" -DestinationPath PySN_Windows.zip
+
+      - name: Upload Artifact (MacOS)
+        if: ${{ matrix.os == 'macos-13' }}
+        uses: actions/upload-artifact@v4
         with:
-          name: PySN.zip
-          path: PySN.zip
-      - name: create release
+          name: PySN_MacOS.zip
+          path: PySN_MacOS.zip
+
+      - name: Upload Artifact (Windows)
+        if: ${{ matrix.os == 'windows-latest' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: PySN_Windows.zip
+          path: PySN_Windows.zip
+
+  create_release:
+    needs: build_matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: PySN_MacOS.zip
+          path: ./artifacts
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: PySN_Windows.zip
+          path: ./artifacts
+
+      - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.7
-          release_name: v2.1.7
+          tag_name: v2.1.8
+          release_name: Release v2.1.8
           body: |
-            Update the download bar and status based on actual chunk size.
+            Build MacOS Executable.
           draft: false
           prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
+
+      - name: Upload Release Asset (Windows)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{steps.create_release.outputs.upload_url}}
-          asset_path: PySN.zip
-          asset_name: PySN.zip
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/PySN_Windows.zip
+          asset_name: PySN_Windows.zip
           asset_content_type: application/zip
-          
+
+      - name: Upload Release Asset (MacOS)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/PySN_MacOS.zip
+          asset_name: PySN_MacOS.zip
+          asset_content_type: application/zip
