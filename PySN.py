@@ -8,6 +8,7 @@ import os
 import queue
 import yaml
 import time
+import sys
 from fnmatch import fnmatch
 from configparser import ConfigParser
 import xml.etree.ElementTree as ET
@@ -53,6 +54,14 @@ class ConfigSettings():
     def __init__(self):
         super().__init__()
 
+    def get_path():
+        if getattr(sys, 'frozen', False):
+            app_path = os.path.dirname(sys.executable)
+        else:
+            app_path = os.path.dirname(os.path.abspath(__file__))
+        normalized_path = app_path.replace('\\','/')
+        return normalized_path
+
     #Gets settings from the config file.
     def get_config():
         config = ConfigParser()
@@ -72,9 +81,8 @@ class ConfigSettings():
 
     #Checks for the config file, and gets the settings from it. Saves default config if none present.
     def check_config():
-        normalized_path = os.path.dirname(__file__).replace('\\','/')
-        config_path = (normalized_path + '/config.ini')
-        if path.exists(config_path):
+        normalized_path = ConfigSettings.get_path()
+        if os.path.exists('config.ini'):
             save_dir, rpcs3_dir = ConfigSettings.get_config()
         else:
             save_dir = (normalized_path + '/Updates/')

@@ -103,12 +103,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.9
-          release_name: v2.1.9
+          tag_name: v2.1.10
+          release_name: v2.1.10
           body: |
-            Correctly get the path to PySN on unix systems.
-            
-            This fixes updates not saving in the correct default locations on MacOS and Linux.
+            Fix config file error and actually get the correct path to PySN on Unix systems.
+
+            (Previous version crashes)
           draft: false
           prerelease: false
 
