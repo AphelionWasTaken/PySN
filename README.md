@@ -46,7 +46,7 @@ If you want to download firmware, just type in "fw" or "firmware" and hit enter 
 
 File Locations
 ------------------------
-Title Updates are downloaded into an Updates folder within the PySN directory by default, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/BCUS98114 Gran Turismo 5`).
+Title Updates are downloaded into an Updates folder within the directory containing PySN by default, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/BCUS98114 Gran Turismo 5`).
 
 You can change the update folder location in PySN's settings, but your updates will always be separated out by console and game.
 
