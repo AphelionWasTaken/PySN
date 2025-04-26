@@ -103,12 +103,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.10
-          release_name: v2.1.10
+          tag_name: v2.1.11
+          release_name: v2.1.11
           body: |
-            Fix config file error and actually get the correct path to PySN on Unix systems.
+            Removes search for Chinese PS3 firmware, as it is no longer hosted.
 
-            (Previous version crashes)
+            Fixes handling of South Asia PS3 firmware (it used to show up as "SO" rather than "SA")
           draft: false
           prerelease: false
 
