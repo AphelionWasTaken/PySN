@@ -378,6 +378,8 @@ class App(customtkinter.CTk):
 
         if console == 'PlayStation Vita':
             locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn']
+        if console == 'PlayStation 3':
+            locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'br']
         else:
             locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn', 'br']
 
@@ -501,6 +503,8 @@ class App(customtkinter.CTk):
                         ver = item[32:36]
                     if fnmatch(str(item),'*# *') == True:
                         region = item[2:4].upper()
+                        if region == 'SO':
+                            region = 'SA'
                     if fnmatch(str(item),'*UPDAT.PUP') == True:
                         url = item[4:]
                         update_url = requests.get(url, stream=True)
