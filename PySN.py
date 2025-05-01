@@ -294,7 +294,7 @@ class App(customtkinter.CTk):
         
         self.entry = customtkinter.CTkEntry(master=self, placeholder_text='Enter Serial', width = 125)
         self.entry.grid(row=0, column=0, padx=(4,2), pady=(6,0), sticky='ew')
-        self.combobox = customtkinter.CTkComboBox(master=self, values=['PlayStation 3', 'PlayStation 4', 'PlayStation Vita'], width = 125)
+        self.combobox = customtkinter.CTkComboBox(master=self, values=['PlayStation 3', 'PlayStation 4', 'PlayStation 5', 'PlayStation Vita'], width = 125)
         self.combobox.grid(row=0, column=1, columnspan=1, padx=(2,2), pady=(6,0), sticky='ew')
         self.combobox.configure(state = 'readonly')
         self.checkbox = customtkinter.CTkCheckBox(master=self, text='Search Games.yml')
@@ -328,7 +328,7 @@ class App(customtkinter.CTk):
             if title_id.upper() == 'FIRMWARE' or title_id.upper() == 'FW':
                 if console == 'PlayStation 3':
                     self.search_ps3_fw(console)
-                else: self.search_ps4_vita_fw(console)
+                else: self.search_ps4_ps5_vita_fw(console)
             else:
                 self.search(title_id, console)
                 if console == 'PlayStation 3':
@@ -380,6 +380,9 @@ class App(customtkinter.CTk):
             locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn']
         if console == 'PlayStation 3':
             locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'br']
+        if console == 'PlayStation 5':
+            locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn', 'br']
+            obfuscated = 'tJMRE80IbXnE9YuG0jzTXgKEjIMoabr6'
         else:
             locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn', 'br']
 
@@ -388,6 +391,8 @@ class App(customtkinter.CTk):
                 info_url = 'https://f' + locale + '01.psp2.update.playstation.net/update/psp2/list/' + locale + '/psp2-updatelist.xml'
             elif console == 'PlayStation 4':
                 info_url = 'https://f' + locale + '01.ps4.update.playstation.net/update/ps4/list/' + locale + '/ps4-updatelist.xml'
+            elif console == 'PlayStation 5':
+                info_url = f'https://f' + locale + '01.ps5.update.playstation.net/update/ps5/official/' + obfuscated + '/list/' + locale + '/updatelist.xml'
             else:
                 info_url = 'https://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
 
@@ -521,8 +526,8 @@ class App(customtkinter.CTk):
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
         else: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '')
 
-    #Searches for PS4 or Vita update info and populates the widgets in the frame based on that info.
-    def search_ps4_vita_fw(self, console):
+    #Searches for PS4, PS5 or Vita update info and populates the widgets in the frame based on that info.
+    def search_ps4_ps5_vita_fw(self, console):
         root_list = self.request_fw(console)
         update_size_list = []
         url_list = []
@@ -535,11 +540,35 @@ class App(customtkinter.CTk):
         #Parse the elements of the XML and get their attributes. Also pull the loose text in the xml (this contains the download URLs).
         if root_list:
             for root in root_list:
-                for item in root.iter('image'):
-                    update_size_list.append(int(item.get('size')))
-                    url_list.append((''.join(item.itertext())[:-8].strip()))
-                    for item in root.iter('region'):
-                        region_list.append(item.get('id').upper())
+                if console == 'PlayStation 5':
+                    for system_pup in root.iter('system_pup'):
+                        full_label = system_pup.get('label')
+                        version_parts = full_label.split('-')
+                        if len(version_parts) >= 2:
+                            main_version = version_parts[1].split('.')[:2]
+                            clean_version = '.'.join(main_version)
+                        else:
+                            clean_version = full_label
+
+                        region = root.find('.//region').get('id').upper()
+
+                        for update_data in system_pup.iter('update_data'):
+                            update_type = update_data.get('update_type')
+                            for image in update_data.iter('image'):
+                                size = int(image.get('size'))
+                                url = image.text.strip()
+
+                                update_size_list.append(size)
+                                url_list.append(url)
+                                ver_list.append(clean_version)
+                                region_list.append(region)
+                                update_data_list.append(update_type)
+                else:
+                    for item in root.iter('image'):
+                        update_size_list.append(int(item.get('size')))
+                        url_list.append((''.join(item.itertext())[:-8].strip()))
+                        for item in root.iter('region'):
+                            region_list.append(item.get('id').upper())
                     
                     if console == 'PlayStation Vita':   
                         for item in root.iter('version'):
