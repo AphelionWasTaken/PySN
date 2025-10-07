@@ -106,7 +106,8 @@ jobs:
           tag_name: v2.1.13
           release_name: v2.1.13
           body: |
-            Fix Windows build directories.
+            Change Windows build directories and stop building Windows release as one file. This should stop false-positives from Windows Defender,
+            however the uncompressed files are a bit larger than the previous single executable.
           draft: false
           prerelease: false
 
