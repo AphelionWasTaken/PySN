@@ -61,7 +61,7 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           mkdir windows
-          cp dist/PySN windows
+          cp -r dist/* windows
           Compress-Archive -Path "windows/*" -DestinationPath PySN_Windows.zip
 
       - name: Upload Artifact (MacOS)
@@ -106,8 +106,7 @@ jobs:
           tag_name: v2.1.13
           release_name: v2.1.13
           body: |
-            Change Windows build directories and stop building Windows release as one file. This should stop false-positives from Windows Defender,
-            however the uncompressed files are a bit larger than the previous single executable.
+            Remove --onefile from Windows build. Still seems to build as one file and may stop being flagged as a false-positive by Windows Defender.
           draft: false
           prerelease: false
 
