@@ -103,10 +103,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.12
-          release_name: v2.1.12
+          tag_name: v2.1.13
+          release_name: v2.1.13
           body: |
-            Truncates japanese titles further. Fixes some bugs with titles which use full-width characters.
+            Stop building Windows release as one file. This should stop false-positives from Windows Defender,
+            however the uncompressed files are a bit larger than the previous single .exe
           draft: false
           prerelease: false
 
