@@ -48,7 +48,7 @@ jobs:
       - name: Run PyInstaller (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          pyinstaller PySN.py -w --onefile --icon="AphIcon.ico"
+          pyinstaller PySN.py -w --icon="AphIcon.ico"
 
       - name: Move and Zip (MacOS)
         if: ${{ matrix.os == 'macos-13' }}
