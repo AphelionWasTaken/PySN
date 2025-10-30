@@ -28,7 +28,7 @@ This program uses Python 3. You must have [Python](https://www.python.org/downlo
 
 You will also need the Requests, CustomTkinter, BeautifulSoup, and PyYaml Python modules installed to run this program. To install these, open any terminal and type `pip install requests`, `pip install customtkinter`, `pip install beautifulsoup4`, and `pip install pyyaml`, respectively.
 
-If you have already cloned/downloaded this repo, you can easily install all of these modules by navigating to your PySN directory (where requirements.txt exists), and type `pip install -r -requirements.txt`.
+If you have already cloned/downloaded this repo, you can easily install all of these modules by navigating to your PySN directory (where requirements.txt exists), and type `pip install -r requirements.txt`.
 
 Once you have the modules, clone this repo or just click on the green Code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`.
 
