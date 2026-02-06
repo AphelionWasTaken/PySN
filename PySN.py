@@ -670,7 +670,7 @@ class App(customtkinter.CTk):
             #After the file is downloaded, reconfigure the dl and open button behavior.
             #Then remove the file if the dl was cancelled. If it completed, run is_shit_there to check the hash and configure buttons properly.
             self.textbox.dlbutton_list[index].configure(command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
-            self.textbox.open_button_list[index].configure(text='Open', state = 'disabled', command=lambda: None)    
+            self.textbox.open_button_list[index].configure(text='Open', state = 'disabled', command=lambda: None)
             if self.textbox.status_list[index].cget('text') == 'Download Cancelled!':
                 os.remove(fileloc)
             else:
