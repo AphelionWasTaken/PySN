@@ -218,7 +218,8 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
         if len(title_id) == 2 and sha1 == 'N/A':
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
-        elif ver.startswith(' D') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
+        elif ((ver.startswith(' DRM-Free') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found') or
+        ('\u3040' <= name[0] <= '\u30FF' or '\u4E00' <= name[0] <= '\u9FFF' or '\uFF65' <= name[0] <= '\uFF9F')):
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:9] + '...', anchor='w')
         elif len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:18] + '...', anchor='w') 
@@ -226,7 +227,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
         else:
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor='center')
-        
+
         #Creates labels for size and status, buttons for downloading and opening the file, a progress bar, and establishes the queue for threading.
         size = str(round((update_size/1024000),2)) + ' MB'
         size_label = customtkinter.CTkLabel(self, text=size, anchor='e', width = 70)

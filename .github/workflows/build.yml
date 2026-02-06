@@ -48,7 +48,7 @@ jobs:
       - name: Run PyInstaller (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          pyinstaller PySN.py -w --onefile --icon="AphIcon.ico"
+          pyinstaller PySN.py -w --icon="AphIcon.ico"
 
       - name: Move and Zip (MacOS)
         if: ${{ matrix.os == 'macos-13' }}
@@ -61,7 +61,7 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
           mkdir windows
-          cp dist/PySN.exe windows
+          cp -r dist/* windows
           Compress-Archive -Path "windows/*" -DestinationPath PySN_Windows.zip
 
       - name: Upload Artifact (MacOS)
@@ -103,12 +103,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.11
-          release_name: v2.1.11
+          tag_name: v2.1.13
+          release_name: v2.1.13
           body: |
-            Removes search for Chinese PS3 firmware, as it is no longer hosted.
-
-            Fixes handling of South Asia PS3 firmware (it used to show up as "SO" rather than "SA")
+            Remove --onefile from Windows build. Still seems to build as one file and may stop being flagged as a false-positive by Windows Defender.
           draft: false
           prerelease: false
 
