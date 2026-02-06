@@ -89,7 +89,7 @@ class ConfigSettings():
             rpcs3_dir = 'No Games.yml Location Set!'
             ConfigSettings.save_config('x', save_dir , rpcs3_dir)
         return save_dir, rpcs3_dir
-    
+
 save_dir, rpcs3_dir = ConfigSettings.check_config()
 
 
@@ -127,12 +127,12 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.yaml_dir_field.grid(row=3, column=1, columnspan=3, padx=5, pady=(0,25), sticky='new')
         self.edit_button2 = customtkinter.CTkButton(master=self, width = 50, text='Edit', command = self.button_yml_loc)
         self.edit_button2.grid(row=3, padx=5, pady=(0,0), column=4, sticky='new')
-        
+
         self.save_button = customtkinter.CTkButton(master=self, text='Save', width = 100,  command = self.button_save)
         self.save_button.grid(row=4, padx=(0,5), column=2, sticky='e')
         self.cancel_button = customtkinter.CTkButton(master=self, text='Cancel', width = 100, command=self.destroy)
         self.cancel_button.grid(row=4, padx=(5,135), column=3, columnspan=2, sticky='w')
-       
+
         self.save_dir_field.insert('0.0',self.temp_save)
         self.save_dir_field.configure(state='disabled')
         self.yaml_dir_field.insert('0.0',self.temp_rpcs3)
@@ -218,12 +218,12 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
         if len(title_id) == 2 and sha1 == 'N/A':
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
-        elif ((ver.startswith(' DRM-Free') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found') or
+        elif ((ver.startswith(' DRM-Free') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found') or
         ('\u3040' <= name[0] <= '\u30FF' or '\u4E00' <= name[0] <= '\u9FFF' or '\uFF65' <= name[0] <= '\uFF9F')):
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:9] + '...', anchor='w')
-        elif len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:18] + '...', anchor='w') 
-        elif len(name)<=18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':
+        elif len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
+            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:18] + '...', anchor='w')
+        elif len(name)<=18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
         else:
             title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor='center')
@@ -242,9 +242,9 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         if self.command is not None:
                 dlbutton.configure(command=lambda: self.command(name, title_id, url, console, update_size, sha1, index, download_path, fileloc))
                 open_button.configure(command=lambda: self.command(download_path, index, fileloc))
-        if not name.startswith('Invalid ID') and not name.startswith('No updates available for') and name != 'No updates found':  
+        if not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
             title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky='w')
-            status.grid(row=len(self.title_label_list), column=2, pady=(0, 10),padx=(0, 0), sticky='e') 
+            status.grid(row=len(self.title_label_list), column=2, pady=(0, 10),padx=(0, 0), sticky='e')
             size_label.grid(row=len(self.title_label_list), column=3, padx=(10, 5), pady=(0, 10), sticky='e')
             prog_bar.grid(row=len(self.dlbutton_list), column=0, columnspan=3, pady=(15, 0), sticky='w')
             dlbutton.grid(row=len(self.dlbutton_list), column=4, pady=(0, 10), padx=0, sticky='e')
@@ -252,7 +252,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         else:
             title_label.grid(row=len(self.title_label_list), column=0, columnspan=8, pady=(0, 10))
 
-        #Appends the list of widgets, so that we can refer to them specifically later.    
+        #Appends the list of widgets, so that we can refer to them specifically later.
         self.title_label_list.append(title_label)
         self.size_label_list.append(size_label)
         self.status_list.append(status)
@@ -292,19 +292,19 @@ class App(customtkinter.CTk):
         self.grid_rowconfigure((0, 1, 2), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
         self.bind('<Return>', lambda event: self.button_search())
-        
+
         self.entry = customtkinter.CTkEntry(master=self, placeholder_text='Enter Serial', width = 125)
         self.entry.grid(row=0, column=0, padx=(4,2), pady=(6,0), sticky='ew')
-        self.combobox = customtkinter.CTkComboBox(master=self, values=['PlayStation 3', 'PlayStation 4', 'PlayStation Vita'], width = 125)
+        self.combobox = customtkinter.CTkComboBox(master=self, values=['PlayStation 3', 'PlayStation 4', 'PlayStation Vita', 'PlayStation 5'], width = 125)
         self.combobox.grid(row=0, column=1, columnspan=1, padx=(2,2), pady=(6,0), sticky='ew')
         self.combobox.configure(state = 'readonly')
         self.checkbox = customtkinter.CTkCheckBox(master=self, text='Search Games.yml')
         self.checkbox.grid(row=0, column=2, columnspan=2, padx=(2,4), pady=(6,0), sticky='w')
         self.button1 = customtkinter.CTkButton(master=self, command=self.button_search, text='Search', width = 125)
         self.button1.grid(row=0, column=4, padx=4, pady=(6,0), sticky='ew')
-        
+
         self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-        self.textbox.grid(row=1, column=0, columnspan=5, padx=4,  pady=(0,0), sticky='ew')
+        self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=(0,0), sticky='ew')
 
         self.button2 = customtkinter.CTkButton(master=self, command=self.button_downall, text='Download All', width = 125)
         self.button2.grid(row=2, column=0, padx=(4,2), pady=(0,6), sticky='ew')
@@ -313,9 +313,9 @@ class App(customtkinter.CTk):
         self.clearbox = customtkinter.CTkCheckBox(master=self, text='Clear List On Search')
         self.clearbox.grid(row=2, column=2, columnspan=2, padx=(2,4), pady=(0,6), sticky='w')
         self.clearbox.select()
-        self.button4 = customtkinter.CTkButton(master=self, command=self.button_settings, text='Settings', width = 125 )
+        self.button4 = customtkinter.CTkButton(master=self, command=self.button_settings, text='Settings', width = 125)
         self.button4.grid(row=2, column=4, padx=4, pady=(0,6), sticky='ew')
-    
+
     #Opens the file location. Used with the open button.
     def open_loc(self, download_path):
         customtkinter.filedialog.askopenfilenames(initialdir=download_path)
@@ -329,7 +329,9 @@ class App(customtkinter.CTk):
             if title_id.upper() == 'FIRMWARE' or title_id.upper() == 'FW':
                 if console == 'PlayStation 3':
                     self.search_ps3_fw(console)
-                else: self.search_ps4_vita_fw(console)
+                else: self.search_ps4_ps5_vita_fw(console)
+            elif console == 'PlayStation 5':
+                self.search_ps5_update(title_id)
             else:
                 self.search(title_id, console)
                 if console == 'PlayStation 3':
@@ -342,7 +344,7 @@ class App(customtkinter.CTk):
                 for index in alist:
                     title_id = index
                     self.search(title_id, console)
-                    self.search_no_drm(title_id, console)  
+                    self.search_no_drm(title_id, console)
 
     #Assigns hashes and urls based on console and title id, checks if the url is valid, returns the xml and game name.
     def request_update(self, title_id, console):
@@ -360,7 +362,7 @@ class App(customtkinter.CTk):
         else:
             xml_url = 'https://a0.ww.np.dl.playstation.net/tpl/np/' + title_id + '/' + title_id + '-ver.xml'
         var_url = requests.get(xml_url, stream = True, verify=False)
-        
+
         if var_url.status_code == 200 and var_url.text != '':
             root = ET.fromstring(var_url.content)
             name = (root.find('./tag/package/paramsfo/').text).replace('\n', ' ')
@@ -370,9 +372,9 @@ class App(customtkinter.CTk):
             name = 'No updates available for '
         else:
             name = 'Invalid ID'
-        
+
         return root, name
-   
+
    #Checks if the url is valid, returns a list of xml and txt contents.
     def request_fw(self, console):
         root_list = []
@@ -389,6 +391,9 @@ class App(customtkinter.CTk):
                 info_url = 'https://f' + locale + '01.psp2.update.playstation.net/update/psp2/list/' + locale + '/psp2-updatelist.xml'
             elif console == 'PlayStation 4':
                 info_url = 'https://f' + locale + '01.ps4.update.playstation.net/update/ps4/list/' + locale + '/ps4-updatelist.xml'
+            elif console == 'PlayStation 5':
+                obf = 'tJMRE80IbXnE9YuG0jzTXgKEjIMoabr6'
+                info_url = 'http://f' + locale + '01.ps5.update.playstation.net/update/ps5/official/'+ obf + '/list/'+ locale + '/updatelist.xml'
             else:
                 info_url = 'https://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
 
@@ -418,7 +423,7 @@ class App(customtkinter.CTk):
                         url = (item.get('url'))
                         sha1 = (item.get('hashValue'))
                         update_size = (item.get('fileSize'))
-                else:        
+                else:
                     url = (item.get('url'))
                     sha1 = (item.get('sha1sum'))
                     update_size = int((item.get('size')))
@@ -429,22 +434,22 @@ class App(customtkinter.CTk):
                 update_file = path.basename(url)
                 fileloc = (download_path + '/' + update_file) 
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
-                
+
                 #Check the hash in case an incomplete or corrupt file already exists. Then handle errors in search results.
                 hash_match = is_shit_there(self, download_path, index, fileloc, console, sha1)
                 if hash_match == 1:
                     self.textbox.status_list[index].configure(text_color = 'green', text='Already Owned!')
                 elif hash_match == 2:
                     self.textbox.status_list[index].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
-                else: pass               
-        elif game_name == 'Invalid ID': 
+                else: pass
+        elif game_name == 'Invalid ID':
             self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
         else: self.textbox.add_item(game_name + title_id, '', '', '', '', 0, '', '', '', '')
 
     #Searches specifically for PS3 DRM-free update info, and populates the widgets in the frame based on that info.
     def search_no_drm(self, title_id, console):
         root, game_name = self.request_update(title_id, console)
-        
+
         #If the XML exists, make sure that there is a URL element before continuing.
         if root != 0:
             drm_free_check = False
@@ -462,35 +467,39 @@ class App(customtkinter.CTk):
                 update_size_list = []
                 name_list = []
                 url_list = []
-            
+
                 #Append lists with version info from the package element, and update info from the URL element.
                 #Then iterate through the lists for the download path and widget info. Also places widgets in the textbox.
                 for item in root.iter('package'):
                     package_list.append(item.get('version'))
                 for item in root.iter('url'):
                     drmfree_list.append(root.get('url'))
-                    url_list.append(item.get('url'))                
+                    url_list.append(item.get('url'))
                     sha1_list.append(item.get('sha1sum'))
                     update_size_list.append(int((item.get('size'))))
-                    name_list.append(game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip())         
+                    name_list.append(game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip())       
                 for version in package_list:
                     download_path = (save_dir + console + '/' + title_id + ' ' + name_list[i])
                     update_file = 'DRM-Free ' + path.basename(url_list[i])
                     fileloc = (download_path + '/' + update_file)
                     index_list.append(len(self.textbox.dlbutton_list))
                     self.textbox.add_item(game_name, title_id, ' DRM-Free v' + version, url_list[i], console, update_size_list[i], sha1_list[i], index_list[i], download_path, fileloc)
-                    
+
                     #Check the hash in case an incomplete or corrupt file already exists. Errors in search results are handled by the other search, so we just pass here.
                     hash_match = is_shit_there(self, download_path, index_list[i], fileloc, console, sha1_list[i])
                     if hash_match == 1:
                         self.textbox.status_list[index_list[i]].configure(text_color = 'green', text='Already Owned!')
                     elif hash_match == 2:
                         self.textbox.status_list[index_list[i]].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
-                    else: pass  
+                    else: pass
                     i = i+1
             else: pass
         else: pass
-    
+
+    def search_ps5_update(self, title_id):
+        name = 'PlayStation 5 title updates are not supported yet.'
+        self.textbox.add_item(name, '', '', '', '', 0, '', '', '', '')
+
     #Searches for PS3 firmware info, and populates the widgets in the frame based on that info.
     def search_ps3_fw(self, console):
         root_list = self.request_fw(console)
@@ -509,7 +518,7 @@ class App(customtkinter.CTk):
                     if fnmatch(str(item),'*UPDAT.PUP') == True:
                         url = item[4:]
                         update_url = requests.get(url, stream=True)
-                        update_size = int(update_url.headers.get('Content-Length')) 
+                        update_size = int(update_url.headers.get('Content-Length'))
 
                 #There's no hash available to check, so sha1 gets assigned N/A. Title ID becomes region for formatting. set paths and populate widgets.
                 sha1 = 'N/A'
@@ -518,12 +527,12 @@ class App(customtkinter.CTk):
                 game_name = console + ' Firmware'
                 download_path = save_dir + console + '/' + game_name + '/' + region
                 update_file = 'v' + ver + ' ' + path.basename(url)
-                fileloc = (download_path + '/' + update_file) 
+                fileloc = (download_path + '/' + update_file)
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
         else: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '')
 
     #Searches for PS4 or Vita update info and populates the widgets in the frame based on that info.
-    def search_ps4_vita_fw(self, console):
+    def search_ps4_ps5_vita_fw(self, console):
         root_list = self.request_fw(console)
         update_size_list = []
         url_list = []
@@ -532,7 +541,7 @@ class App(customtkinter.CTk):
         region_list = []
         update_data_list = []
         i=0
-        
+
         #Parse the elements of the XML and get their attributes. Also pull the loose text in the xml (this contains the download URLs).
         if root_list:
             for root in root_list:
@@ -541,14 +550,34 @@ class App(customtkinter.CTk):
                     url_list.append((''.join(item.itertext())[:-8].strip()))
                     for item in root.iter('region'):
                         region_list.append(item.get('id').upper())
-                    
-                    if console == 'PlayStation Vita':   
+
+                    if console == 'PlayStation Vita':
                         for item in root.iter('version'):
                             ver_list.append(item.get('label'))
                         for item in root.iter('update_data'):
                             update_data_list.append(item.get('update_type'))
                         for item in root.iter('recovery'):
                             update_data_list.append(item.get('spkg_type'))
+                    elif console == 'PlayStation 5':
+                        for item in root.iter('system_pup'):
+                            full_label = item.get('label')
+                            auto_ver = item.get('auto_update_version', '00.00')
+                            try:
+                                parts = full_label.split('-')
+                                yy_ss = parts[0]
+                                version_main = parts[1]
+                                v_parts = version_main.split('.')
+                                major = v_parts[0]
+                                minor = v_parts[1]
+                                nn = "00" if auto_ver == "00.00" else "01"
+                                short_ver = f"{yy_ss}-{major}.{minor}.{nn}"
+                                ver_list.append(short_ver)
+                            except:
+                                ver_list.append(full_label)
+                        for item in root.iter('update_data'):
+                            update_data_list.append(item.get('update_type'))
+                        for item in root.iter('recovery_pup'):
+                            update_data_list.append(item.get('type'))
                     else:
                         for item in root.iter('system_pup'):
                             ver_list.append(item.get('label'))
@@ -593,7 +622,7 @@ class App(customtkinter.CTk):
     def cancel(self, index):
         self.textbox.dlbutton_list[index].configure(text='Download')
         self.textbox.queue_list[index].put(ButtonAction.STOP)
-    
+
     #Creates directories, updates buttons, downloads the update file, and checks the hash.
     def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem):
         with sem:
@@ -625,7 +654,7 @@ class App(customtkinter.CTk):
                                 break
                         except queue.Empty:
                             pass
-                        
+
                         #Download the file and update the progress bar and status label based on how much has downloaded.
                         for chunk in r.iter_content(chunk_size=(1024*1024)):
                             if chunk:
@@ -641,7 +670,7 @@ class App(customtkinter.CTk):
             #After the file is downloaded, reconfigure the dl and open button behavior.
             #Then remove the file if the dl was cancelled. If it completed, run is_shit_there to check the hash and configure buttons properly.
             self.textbox.dlbutton_list[index].configure(command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
-            self.textbox.open_button_list[index].configure(text='Open', state = 'disabled', command=lambda: None)            
+            self.textbox.open_button_list[index].configure(text='Open', state = 'disabled', command=lambda: None)    
             if self.textbox.status_list[index].cget('text') == 'Download Cancelled!':
                 os.remove(fileloc)
             else:
@@ -680,7 +709,6 @@ class App(customtkinter.CTk):
         semaphore = threading.Semaphore(2)
         threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, semaphore), daemon = True).start()
         time.sleep(.001)
-        
 
     #Behavior for the Download All button. Opens the download all window.
     def button_downall(self):
@@ -693,7 +721,7 @@ class App(customtkinter.CTk):
         else:
             self.toplevel_window.focus()  # if window exists focus it
 
-    #Behavior for the Clear button. Clears the list.            
+    #Behavior for the Clear button. Clears the list.
     def button_clear(self):
         self.textbox.destroy()
         self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
