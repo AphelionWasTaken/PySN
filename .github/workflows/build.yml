@@ -103,10 +103,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.1.13
-          release_name: v2.1.13
+          tag_name: v2.2.0
+          release_name: v2.2.0
           body: |
-            Remove --onefile from Windows build. Still seems to build as one file and may stop being flagged as a false-positive by Windows Defender.
+            Adds support for PlayStation 5 Firmware updates. Should fix games.yml scanning on Linux.
           draft: false
           prerelease: false
 
