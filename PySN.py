@@ -120,7 +120,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.edit_button1 = customtkinter.CTkButton(master=self, width = 50, text='Edit', command = self.button_save_loc)
         self.edit_button1.grid(row=1, padx=5, pady=(0,0), column=4, sticky='new')
 
-        self.rpcs3_dir_label = customtkinter.CTkLabel(master=self, text='Folder containing RPCS3:', anchor='center')
+        self.rpcs3_dir_label = customtkinter.CTkLabel(master=self, text='Folder Containing RPCS3 (Not Needed On Linux):', anchor='center')
         self.rpcs3_dir_label.grid(row=2, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
 
         self.yaml_dir_field = customtkinter.CTkTextbox(master=self, height=25, width = 400, wrap='none')
@@ -338,7 +338,11 @@ class App(customtkinter.CTk):
                     self.search_no_drm(title_id, console)
         else:
             console = 'PlayStation 3'
-            with open(rpcs3_dir+'config/games.yml', 'r') as f:
+            if sys.platform.startswith('linux'):
+                home_dir = os.environ['HOME']
+                yml_dir = home_dir+'/.config/rpcs3/games.yml'
+            else: yml_dir = rpcs3_dir+'config/games.yml'
+            with open(yml_dir, 'r') as f:
                 file = yaml.safe_load(f)
                 alist = list(file)
                 for index in alist:
