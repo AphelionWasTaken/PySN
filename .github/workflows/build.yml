@@ -8,7 +8,7 @@ jobs:
   build_matrix:
     strategy:
       matrix:
-        os: [windows-latest, macos-13]
+        os: [windows-latest, macos-15-intel]
     
     if: github.event.pull_request.merged == true
     runs-on: ${{ matrix.os }}
@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Python (MacOS)
-        if: ${{ matrix.os == 'macos-13' }}
+        if: ${{ matrix.os == 'macos-15-intel' }}
         run: |
           wget https://www.python.org/ftp/python/3.10.6/python-3.10.6-macos11.pkg
           sudo installer -verbose -pkg ./python-3.10.6-macos11.pkg -target /
@@ -31,7 +31,7 @@ jobs:
           architecture: 'x64'
       
       - name: Install Requirements (MacOS)
-        if: ${{ matrix.os == 'macos-13' }}
+        if: ${{ matrix.os == 'macos-15-intel' }}
         run: |
           pip3 install -r requirements.txt
 
@@ -41,7 +41,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run PyInstaller (MacOS)
-        if: ${{ matrix.os == 'macos-13' }}
+        if: ${{ matrix.os == 'macos-15-intel' }}
         run: |
           pyinstaller PySN.py -w --onefile
 
@@ -51,7 +51,7 @@ jobs:
           pyinstaller PySN.py -w --icon="AphIcon.ico"
 
       - name: Move and Zip (MacOS)
-        if: ${{ matrix.os == 'macos-13' }}
+        if: ${{ matrix.os == 'macos-15-intel' }}
         run: |
           mkdir macos
           cp dist/PySN macos
@@ -65,7 +65,7 @@ jobs:
           Compress-Archive -Path "windows/*" -DestinationPath PySN_Windows.zip
 
       - name: Upload Artifact (MacOS)
-        if: ${{ matrix.os == 'macos-13' }}
+        if: ${{ matrix.os == 'macos-15-intel' }}
         uses: actions/upload-artifact@v4
         with:
           name: PySN_MacOS.zip
@@ -103,10 +103,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.2.0
-          release_name: v2.2.0
+          tag_name: v2.2.1
+          release_name: v2.2.1
           body: |
             Adds support for PlayStation 5 Firmware updates. Should fix games.yml scanning on Linux.
+
+            Also use the new macos-15-intel runner for MacOS builds, as macos-13 was deprecated.
           draft: false
           prerelease: false
 
