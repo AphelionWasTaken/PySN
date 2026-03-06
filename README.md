@@ -1,5 +1,5 @@
 # PySN
-PySN is a program which downloads Title Update PKGs and Firmware PUPs for the PlayStation 3, PlayStation 4, and PlayStation Vita directly from Sony's servers.
+PySN is a program which downloads Title Update PKGs for the PlayStation 3, PlayStation 4, and PlayStation Vita directly from Sony's servers. It can also download Firmware PUP files for all 3 consoles plus the PlayStation 5. 
 
 Features:
 - Windows, Linux, and MacOS support
@@ -7,7 +7,7 @@ Features:
 - SHA-1 hash verification of downloads and owned files
 - Ability to search RPCS3's games.yml
 - Support for DRM-Free Title Updates
-- Most recent Firmware downloads for all 3 consoles
+- Most recent Firmware downloads for all 4 consoles
   - Includes PS4 recovery FW, Vita fonts, and Vita preinst FW
 
 If you prefer the command line version of this tool, it can be found [here](https://github.com/AphelionWasTaken/PySN_CMD).
