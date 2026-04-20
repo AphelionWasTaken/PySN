@@ -103,12 +103,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.2.1
-          release_name: v2.2.1
+          tag_name: v2.2.2
+          release_name: v2.2.2
           body: |
-            Adds support for PlayStation 5 Firmware updates. Should fix games.yml scanning on Linux.
-
-            Also use the new macos-15-intel runner for MacOS builds, as macos-13 was deprecated.
+            Makes the search multi-threaded so the interface no longer locks up while searching.
           draft: false
           prerelease: false
 
