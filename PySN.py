@@ -349,6 +349,10 @@ class App(customtkinter.CTk):
                     title_id = index
                     self.search(title_id, console)
                     self.search_no_drm(title_id, console)
+        self.button1.configure(state = 'normal')
+        self.button2.configure(state = 'normal')
+        self.button3.configure(state = 'normal')
+        self.button4.configure(state = 'normal')
 
     #Assigns hashes and urls based on console and title id, checks if the url is valid, returns the xml and game name.
     def request_update(self, title_id, console):
@@ -703,10 +707,14 @@ class App(customtkinter.CTk):
             self.textbox.destroy()
             self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
             self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=0, sticky='ew')
-            self.search_type()
         else:
             self.textbox.clear_items()
-            self.search_type()
+
+        self.button1.configure(state = 'disabled')
+        self.button2.configure(state = 'disabled')
+        self.button3.configure(state = 'disabled')
+        self.button4.configure(state = 'disabled')
+        threading.Thread(target=self.search_type, daemon=True).start()
 
     #Behavior for the Download button.
     def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):
