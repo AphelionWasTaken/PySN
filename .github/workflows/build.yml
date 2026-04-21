@@ -48,7 +48,7 @@ jobs:
       - name: Run PyInstaller (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          pyinstaller PySN.py -w --icon="AphIcon.ico"
+          pyinstaller PySN.py -w --add-data "AphIcon.ico;." --icon="AphIcon.ico"
 
       - name: Move and Zip (MacOS)
         if: ${{ matrix.os == 'macos-15-intel' }}
@@ -103,8 +103,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.2.3
-          release_name: v2.2.3
+          tag_name: v2.2.4
+          release_name: v2.2.4
           body: |
             Adds icon to all windows. Also do not search if the games.yml box is checked and no games.yml is found.
           draft: false
