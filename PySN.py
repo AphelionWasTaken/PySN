@@ -209,6 +209,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     def __init__(self, master, command=None, **kwargs):
         super().__init__(master, **kwargs)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        self.grid_rowconfigure(999, weight=1)
         self.command = command
         self.title_label_list = []
         self.size_label_list = []
@@ -220,52 +221,54 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
 
     #Creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
     def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, fileloc):
+        try:
+            #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
+            if len(title_id) == 2 and sha1 == 'N/A':
+                title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
+            elif ((ver.startswith(' DRM-Free') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found') or
+            ('\u3040' <= name[0] <= '\u30FF' or '\u4E00' <= name[0] <= '\u9FFF' or '\uFF65' <= name[0] <= '\uFF9F')):
+                title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:9] + '...', anchor='w')
+            elif len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
+                title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:18] + '...', anchor='w')
+            elif len(name)<=18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
+                title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
+            else:
+                title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor='center')
 
-        #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
-        if len(title_id) == 2 and sha1 == 'N/A':
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
-        elif ((ver.startswith(' DRM-Free') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found') or
-        ('\u3040' <= name[0] <= '\u30FF' or '\u4E00' <= name[0] <= '\u9FFF' or '\uFF65' <= name[0] <= '\uFF9F')):
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:9] + '...', anchor='w')
-        elif len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:18] + '...', anchor='w')
-        elif len(name)<=18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
-        else:
-            title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor='center')
+            #Creates labels for size and status, buttons for downloading and opening the file, a progress bar, and establishes the queue for threading.
+            size = str(round((update_size/1024000),2)) + ' MB'
+            size_label = customtkinter.CTkLabel(self, text=size, anchor='e', width = 70)
+            status = customtkinter.CTkLabel(self, text='', anchor='e', width = 160)
+            dlbutton = customtkinter.CTkButton(self, text='Download', width=100, height=24)
+            open_button = customtkinter.CTkButton(self, text='Open', width=100, height=24, state = 'disabled')
+            prog_bar = customtkinter.CTkProgressBar(self, width=440, height=5)
+            prog_bar.set(0)
+            q = queue.Queue()
 
-        #Creates labels for size and status, buttons for downloading and opening the file, a progress bar, and establishes the queue for threading.
-        size = str(round((update_size/1024000),2)) + ' MB'
-        size_label = customtkinter.CTkLabel(self, text=size, anchor='e', width = 70)
-        status = customtkinter.CTkLabel(self, text='', anchor='e', width = 160)
-        dlbutton = customtkinter.CTkButton(self, text='Download', width=100, height=24)
-        open_button = customtkinter.CTkButton(self, text='Open', width=100, height=24, state = 'disabled')
-        prog_bar = customtkinter.CTkProgressBar(self, width=440, height=5)
-        prog_bar.set(0)
-        q = queue.Queue()
+            #Configures the buttons to take a command with appropriate variables. Places all of the widgets on the grid.
+            if self.command is not None:
+                    dlbutton.configure(command=lambda: self.command(name, title_id, url, console, update_size, sha1, index, download_path, fileloc))
+                    open_button.configure(command=lambda: self.command(download_path, index, fileloc))
+            if not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
+                title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky='w')
+                status.grid(row=len(self.title_label_list), column=2, pady=(0, 10),padx=(0, 0), sticky='e')
+                size_label.grid(row=len(self.title_label_list), column=3, padx=(10, 5), pady=(0, 10), sticky='e')
+                prog_bar.grid(row=len(self.dlbutton_list), column=0, columnspan=3, pady=(15, 0), sticky='w')
+                dlbutton.grid(row=len(self.dlbutton_list), column=4, pady=(0, 10), padx=0, sticky='e')
+                open_button.grid(row=len(self.dlbutton_list), column=5, pady=(0, 10), padx=(0, 0), sticky='e')
+            else:
+                title_label.grid(row=len(self.title_label_list), column=0, columnspan=8, pady=(0, 10))
 
-        #Configures the buttons to take a command with appropriate variables. Places all of the widgets on the grid.
-        if self.command is not None:
-                dlbutton.configure(command=lambda: self.command(name, title_id, url, console, update_size, sha1, index, download_path, fileloc))
-                open_button.configure(command=lambda: self.command(download_path, index, fileloc))
-        if not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
-            title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky='w')
-            status.grid(row=len(self.title_label_list), column=2, pady=(0, 10),padx=(0, 0), sticky='e')
-            size_label.grid(row=len(self.title_label_list), column=3, padx=(10, 5), pady=(0, 10), sticky='e')
-            prog_bar.grid(row=len(self.dlbutton_list), column=0, columnspan=3, pady=(15, 0), sticky='w')
-            dlbutton.grid(row=len(self.dlbutton_list), column=4, pady=(0, 10), padx=0, sticky='e')
-            open_button.grid(row=len(self.dlbutton_list), column=5, pady=(0, 10), padx=(0, 0), sticky='e')
-        else:
-            title_label.grid(row=len(self.title_label_list), column=0, columnspan=8, pady=(0, 10))
-
-        #Appends the list of widgets, so that we can refer to them specifically later.
-        self.title_label_list.append(title_label)
-        self.size_label_list.append(size_label)
-        self.status_list.append(status)
-        self.queue_list.append(q)
-        self.dlbutton_list.append(dlbutton)
-        self.open_button_list.append(open_button)
-        self.prog_bar_list.append(prog_bar)
+            #Appends the list of widgets, so that we can refer to them specifically later.
+            self.title_label_list.append(title_label)
+            self.size_label_list.append(size_label)
+            self.status_list.append(status)
+            self.queue_list.append(q)
+            self.dlbutton_list.append(dlbutton)
+            self.open_button_list.append(open_button)
+            self.prog_bar_list.append(prog_bar)
+        except Exception:
+            return
 
     #Iterates through the widgets looking for specific strings. If one is found, the whole line will be deleted.
     def clear_items(self):
@@ -290,12 +293,17 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        self._search_thread = None
+        self.session = requests.Session()
+        self.running = True
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.geometry('760x640')
         self.title('PySN')
-        self.resizable(0,0)
+        self.resizable(0,1)
         self.toplevel_window = None
         self.stop_down = False
-        self.grid_rowconfigure((0, 1, 2), weight=1)
+        self.grid_rowconfigure((0, 2), weight=0)
+        self.grid_rowconfigure((1), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
         self.bind('<Return>', lambda event: self.button_search())
         self.iconbitmap(resource_path("AphIcon.ico"))
@@ -310,8 +318,8 @@ class App(customtkinter.CTk):
         self.button1 = customtkinter.CTkButton(master=self, command=self.button_search, text='Search', width = 125)
         self.button1.grid(row=0, column=4, padx=4, pady=(6,0), sticky='ew')
 
-        self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-        self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=(0,0), sticky='ew')
+        self.textbox = ScrollableLabelButtonFrame(master=self, command=self.frame_button_download, corner_radius=5)
+        self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=(5,5), sticky='nsew')
 
         self.button2 = customtkinter.CTkButton(master=self, command=self.button_downall, text='Download All', width = 125)
         self.button2.grid(row=2, column=0, padx=(4,2), pady=(0,6), sticky='ew')
@@ -322,6 +330,20 @@ class App(customtkinter.CTk):
         self.clearbox.select()
         self.button4 = customtkinter.CTkButton(master=self, command=self.button_settings, text='Settings', width = 125)
         self.button4.grid(row=2, column=4, padx=4, pady=(0,6), sticky='ew')
+
+    def on_closing(self):
+        self.running = False
+        self.session.close()
+        self.wait_for_thread()
+
+    def wait_for_thread(self):
+        if self._search_thread is not None and self._search_thread.is_alive():
+            self.after(100, self.wait_for_thread)
+        else:
+            try:
+                self.destroy()
+            except Exception:
+                pass
 
     #Opens the file location. Used with the open button.
     def open_loc(self, download_path):
@@ -354,6 +376,8 @@ class App(customtkinter.CTk):
                     file = yaml.safe_load(f)
                     alist = list(file)
                     for index in alist:
+                        if not self.running:
+                            return
                         title_id = index
                         self.search(title_id, console)
                         self.search_no_drm(title_id, console)
@@ -377,7 +401,11 @@ class App(customtkinter.CTk):
             xml_url = ('https://gs-sec.ww.np.dl.playstation.net/plo/np/' + title_id + '/' + hash + '/' + title_id + '-ver.xml')
         else:
             xml_url = 'https://a0.ww.np.dl.playstation.net/tpl/np/' + title_id + '/' + title_id + '-ver.xml'
-        var_url = requests.get(xml_url, stream = True, verify=False)
+
+        try:
+            var_url = self.session.get(xml_url, stream=True, verify=False, timeout=10)
+        except Exception:
+            return 0, 'Invalid ID'
 
         if var_url.status_code == 200 and var_url.text != '':
             root = ET.fromstring(var_url.content)
@@ -413,7 +441,10 @@ class App(customtkinter.CTk):
             else:
                 info_url = 'https://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
 
-            var_url = requests.get(info_url, stream = True, verify=False)
+            try:
+                var_url = self.session.get(info_url, stream=True, verify=False, timeout=10)
+            except Exception:
+                continue
             if var_url.status_code == 200 and var_url.text != '':
                 if console == 'PlayStation 3':
                     root_list.append(BeautifulSoup(var_url.text, 'html.parser'))
@@ -424,7 +455,11 @@ class App(customtkinter.CTk):
 
     #Requests game/update info and creates widgets in the frame based on that info.
     def search(self, title_id, console):
+        if not self.running:
+            return
         root, game_name = self.request_update(title_id, console)
+        if not self.running:
+            return
 
         #If the xml exists, iterate through the package element to get info about the update. If it's a PS4 title, load and iterate through the JSON for data.
         if root != 0:
@@ -464,7 +499,11 @@ class App(customtkinter.CTk):
 
     #Searches specifically for PS3 DRM-free update info, and populates the widgets in the frame based on that info.
     def search_no_drm(self, title_id, console):
+        if not self.running:
+            return
         root, game_name = self.request_update(title_id, console)
+        if not self.running:
+            return
 
         #If the XML exists, make sure that there is a URL element before continuing.
         if root != 0:
@@ -713,8 +752,8 @@ class App(customtkinter.CTk):
     def button_search(self):
         if self.clearbox.get() == 1:
             self.textbox.destroy()
-            self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-            self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=0, sticky='ew')
+            self.textbox = ScrollableLabelButtonFrame(master=self, command=self.frame_button_download, corner_radius=5)
+            self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=(5,5), sticky='nsew')
         else:
             self.textbox.clear_items()
 
@@ -722,7 +761,8 @@ class App(customtkinter.CTk):
         self.button2.configure(state = 'disabled')
         self.button3.configure(state = 'disabled')
         self.button4.configure(state = 'disabled')
-        threading.Thread(target=self.search_type, daemon=True).start()
+        self._search_thread = threading.Thread(target=self.search_type, daemon=True)
+        self._search_thread.start()
 
     #Behavior for the Download button.
     def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):
@@ -744,8 +784,8 @@ class App(customtkinter.CTk):
     #Behavior for the Clear button. Clears the list.
     def button_clear(self):
         self.textbox.destroy()
-        self.textbox = ScrollableLabelButtonFrame(master=self, height=540, command=self.frame_button_download, corner_radius=5)
-        self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=0, sticky='ew')
+        self.textbox = ScrollableLabelButtonFrame(master=self, command=self.frame_button_download, corner_radius=5)
+        self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=(5,5), sticky='nsew')
 
     #Behavior for the Settings button. Opens the settings window.
     def button_settings(self):

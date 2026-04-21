@@ -103,10 +103,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.2.4
-          release_name: v2.2.4
+          tag_name: v2.3.0
+          release_name: v2.3.0
           body: |
-            Adds icon to all windows. Also do not search if the games.yml box is checked and no games.yml is found.
+            Allows window to be expanded vertically to show more results at once. Fixes threading issue while performing large searches.
+            
+            Also generally speeds things up a bit when performing large searches, such as games.yml parsing.
           draft: false
           prerelease: false
 
