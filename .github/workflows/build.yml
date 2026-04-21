@@ -103,10 +103,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.2.2
-          release_name: v2.2.2
+          tag_name: v2.2.3
+          release_name: v2.2.3
           body: |
-            Makes the search multi-threaded so the interface no longer locks up while searching.
+            Adds icon to all windows. Also do not search if the games.yml box is checked and no games.yml is found.
           draft: false
           prerelease: false
 
