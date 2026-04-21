@@ -48,6 +48,10 @@ def create_directories(download_path):
         makedirs(download_path)
     return download_path
 
+def resource_path(relative_path):
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
+
 
 #Handles the config file.
 class ConfigSettings():
@@ -111,7 +115,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.temp_save, self.temp_rpcs3 = ConfigSettings.check_config()
-        self.after(200, lambda: self.iconbitmap('AphIcon.ico'))
+        self.after(200, lambda: self.iconbitmap(resource_path("AphIcon.ico")))
 
         self.save_dir_label = customtkinter.CTkLabel(master=self, text='Download Update PKGs To This Folder:',justify = 'center', anchor='center')
         self.save_dir_label.grid(row=0, column=1, columnspan=4, padx=5, pady=(20,0), sticky='sew')
@@ -185,7 +189,7 @@ class DownloadAllWindow(customtkinter.CTkToplevel):
         self.geometry('400x240')
         self.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
-        self.after(200, lambda: self.iconbitmap('AphIcon.ico'))
+        self.after(200, lambda: self.iconbitmap(resource_path("AphIcon.ico")))
 
         self.save_dir_label = customtkinter.CTkLabel(master=self, text='You are about to download all of the updates in the list!\n\n\nContinue?\n', anchor='center')
         self.save_dir_label.grid(row=1, column=2, columnspan=2, padx=20, pady=0, sticky='ew')
@@ -294,7 +298,7 @@ class App(customtkinter.CTk):
         self.grid_rowconfigure((0, 1, 2), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
         self.bind('<Return>', lambda event: self.button_search())
-        self.iconbitmap('AphIcon.ico')
+        self.iconbitmap(resource_path("AphIcon.ico"))
 
         self.entry = customtkinter.CTkEntry(master=self, placeholder_text='Enter Serial', width = 125)
         self.entry.grid(row=0, column=0, padx=(4,2), pady=(6,0), sticky='ew')
