@@ -53,7 +53,6 @@ def is_shit_there(self, download_path, index, fileloc, console, sha1, expected_s
 
     return 1
 
-
 #Creates a directory for the game in the download path.
 def create_directories(download_path):
     if not path.exists(download_path):
@@ -63,7 +62,6 @@ def create_directories(download_path):
 def resource_path(relative_path):
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
-
 
 #Handles the config file.
 class ConfigSettings():
@@ -108,13 +106,11 @@ class ConfigSettings():
 
 save_dir, rpcs3_dir = ConfigSettings.check_config()
 
-
 #Used to send messages to the queue
 class ButtonAction(Enum):
     STOP = 1
     PAUSE = 2
     RESUME = 3
-
 
 #Window with save and rpcs3/games.yml locations.
 class SettingsWindow(customtkinter.CTkToplevel):
@@ -194,7 +190,6 @@ class SettingsWindow(customtkinter.CTkToplevel):
         ConfigSettings.save_config('w', save_dir , rpcs3_dir)
         self.destroy()
 
-
 #Download All window. I did not create the downall function as part of this class for whatever reason...
 class DownloadAllWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
@@ -216,7 +211,6 @@ class DownloadAllWindow(customtkinter.CTkToplevel):
 
         self.cancel_button = customtkinter.CTkButton(master=self, width = 100, text='Cancel', command=self.destroy)
         self.cancel_button.grid(row=4, padx=(5,55), column=3, sticky='w')
-
 
 #Frame where all the fun widgets go. This gets put inside the textbox.
 class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
@@ -310,7 +304,6 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
                 self.dlbutton_list.remove(dlbutton)
                 self.open_button_list.remove(open_button)
                 self.prog_bar_list.remove(prog_bar)
-
 
 #Main window and some button functionality. Vaguely named widgets are in order of how they appear on screen.
 class App(customtkinter.CTk):
@@ -791,7 +784,6 @@ class App(customtkinter.CTk):
             else:
                 is_shit_there(self, download_path, index, fileloc, console, sha1, size)
 
-
     #Downloads all files, or only new files based on the check box in the downall window. Pretty sure it belongs in the DownloadAllWindow class.
     def downall(self):
         self.toplevel_window.destroy()
@@ -849,7 +841,6 @@ class App(customtkinter.CTk):
             self.toplevel_window = SettingsWindow(self)
         else:
             self.toplevel_window.focus()
-
 
 if __name__ == '__main__':
     app = App()
