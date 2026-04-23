@@ -232,11 +232,15 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         self.dlbutton_list = []
         self.open_button_list = []
         self.prog_bar_list = []
-        self.bind_all("<MouseWheel>", self.on_mousewheel)
+        if sys.platform in ('win32', 'darwin'):
+            self.bind_all("<MouseWheel>", self.on_mousewheel)
 
     #Changes scroll speed of the mouse wheel. Default is too slow.
     def on_mousewheel(self, event):
-        self._parent_canvas.yview_scroll(int(-1*(event.delta)), "units")
+        delta = event.delta
+        if sys.platform == "darwin":
+            delta = delta * 120
+        self._parent_canvas.yview_scroll(int(-1*(delta)), "units")
 
     #Creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
     def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, fileloc):
