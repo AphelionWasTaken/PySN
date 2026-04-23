@@ -103,10 +103,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.3.1
-          release_name: v2.3.1
+          tag_name: v2.4.0
+          release_name: v2.4.0
           body: |
-            Set the icon to only be referenced on Windows, fixing MacOS builds until an icon is added for MacOS.
+            Hash files asynchronously to speed up games.yml search when many updates are owned.
+
+            Hash files in chunks to speed up hashing of large files and reduce memory usage.
+
+            Set the progress bar to 100% for files that are already owned for better visibility.
+
+            Change mousewheel scolling sensitivity for faster scrolling.
+
+            Check for correct size of firmware files that do not have a hash to check.
           draft: false
           prerelease: false
 
