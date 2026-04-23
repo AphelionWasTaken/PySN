@@ -15,32 +15,43 @@ import xml.etree.ElementTree as ET
 from os import makedirs, path
 from enum import Enum
 from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
 
 requests.packages.urllib3.disable_warnings()
 
 #Checks if the download path already exists and if hashes match. Changes the buttons and status label accordingly.
-def is_shit_there(self, download_path, index, fileloc, console, sha1):
-    if path.exists(fileloc):
-        hash = hashlib.sha1()
-        hash_match = 1
-        self.textbox.dlbutton_list[index].configure(text='Redownload')
-        self.textbox.open_button_list[index].configure(text='Open', state='normal', command=lambda: self.open_loc(download_path))
-        if sha1 != 'N/A':
-            self.textbox.dlbutton_list[index].configure(state='disabled')
-            self.textbox.open_button_list[index].configure(state='disabled')
-            self.textbox.status_list[index].configure(text_color = 'yellow', text='Checking Hash...')
-            with open(fileloc,'rb') as f:
-                if console == 'PlayStation 3' or console == 'PlayStation Vita':
-                    data = f.read()[:-32]
-                else: data = f.read()
-                hash.update(data)
-                if sha1.upper() == (hash.hexdigest().upper()):
-                    hash_match = 1
-                else:
-                    hash_match = 2
+def is_shit_there(self, download_path, index, fileloc, console, sha1, expected_size=None):
+    if not path.exists(fileloc):
+        return 0
+
+    self.textbox.status_list[index].configure(text_color='yellow',text='Checking Hash...')
+    self.textbox.dlbutton_list[index].configure(text='Redownload', state='disabled')
+    self.textbox.open_button_list[index].configure(
+        text='Open',
+        state='disabled',
+        command=lambda: self.open_loc(download_path)
+    )
+    self.after(0, lambda: self.textbox.prog_bar_list[index].set(1))
+
+    actual_size = os.path.getsize(fileloc)
+    if actual_size != expected_size:
+        self.textbox.status_list[index].configure(text_color='red', text='Size Mismatch!')
         self.textbox.dlbutton_list[index].configure(state='normal')
         self.textbox.open_button_list[index].configure(state='normal')
-        return hash_match
+        return 1
+
+    if sha1 == 'N/A':
+        self.textbox.status_list[index].configure(text_color='green', text='Already Owned!')
+        self.textbox.dlbutton_list[index].configure(state='normal')
+        self.textbox.open_button_list[index].configure(state='normal')
+        return 1
+
+    self.hash_executor.submit(self.hash_check_worker, index, fileloc, console, sha1)
+
+    if self.hash_executor._work_queue.qsize() > 8:
+        time.sleep(0.05)
+
+    return 1
 
 #Creates a directory for the game in the download path.
 def create_directories(download_path):
@@ -51,7 +62,6 @@ def create_directories(download_path):
 def resource_path(relative_path):
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
-
 
 #Handles the config file.
 class ConfigSettings():
@@ -96,13 +106,11 @@ class ConfigSettings():
 
 save_dir, rpcs3_dir = ConfigSettings.check_config()
 
-
 #Used to send messages to the queue
 class ButtonAction(Enum):
     STOP = 1
     PAUSE = 2
     RESUME = 3
-
 
 #Window with save and rpcs3/games.yml locations.
 class SettingsWindow(customtkinter.CTkToplevel):
@@ -118,7 +126,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
         if sys.platform == 'win32':
             self.after(200, lambda: self.iconbitmap(resource_path("AphIcon.ico")))
 
-        self.save_dir_label = customtkinter.CTkLabel(master=self, text='Download Update PKGs To This Folder:',justify = 'center', anchor='center')
+        self.save_dir_label = customtkinter.CTkLabel(master=self, text='Download Update PKGs To This Folder:', justify = 'center', anchor='center')
         self.save_dir_label.grid(row=0, column=1, columnspan=4, padx=5, pady=(20,0), sticky='sew')
 
         self.save_dir_field = customtkinter.CTkTextbox(master=self, height=25, wrap='none')
@@ -134,7 +142,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.edit_button2 = customtkinter.CTkButton(master=self, width = 50, text='Edit', command = self.button_yml_loc)
         self.edit_button2.grid(row=3, padx=5, pady=(0,0), column=4, sticky='new')
 
-        self.save_button = customtkinter.CTkButton(master=self, text='Save', width = 100,  command = self.button_save)
+        self.save_button = customtkinter.CTkButton(master=self, text='Save', width = 100, command = self.button_save)
         self.save_button.grid(row=4, padx=(0,5), column=2, sticky='e')
         self.cancel_button = customtkinter.CTkButton(master=self, text='Cancel', width = 100, command=self.destroy)
         self.cancel_button.grid(row=4, padx=(5,135), column=3, columnspan=2, sticky='w')
@@ -182,7 +190,6 @@ class SettingsWindow(customtkinter.CTkToplevel):
         ConfigSettings.save_config('w', save_dir , rpcs3_dir)
         self.destroy()
 
-
 #Download All window. I did not create the downall function as part of this class for whatever reason...
 class DownloadAllWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
@@ -205,7 +212,6 @@ class DownloadAllWindow(customtkinter.CTkToplevel):
         self.cancel_button = customtkinter.CTkButton(master=self, width = 100, text='Cancel', command=self.destroy)
         self.cancel_button.grid(row=4, padx=(5,55), column=3, sticky='w')
 
-
 #Frame where all the fun widgets go. This gets put inside the textbox.
 class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
     def __init__(self, master, command=None, **kwargs):
@@ -220,6 +226,15 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         self.dlbutton_list = []
         self.open_button_list = []
         self.prog_bar_list = []
+        if sys.platform in ('win32', 'darwin'):
+            self.bind_all("<MouseWheel>", self.on_mousewheel)
+
+    #Changes scroll speed of the mouse wheel. Default is too slow.
+    def on_mousewheel(self, event):
+        delta = event.delta
+        if sys.platform == "darwin":
+            delta = delta * 120
+        self._parent_canvas.yview_scroll(int(-1*(delta)), "units")
 
     #Creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
     def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, fileloc):
@@ -243,7 +258,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
             status = customtkinter.CTkLabel(self, text='', anchor='e', width = 160)
             dlbutton = customtkinter.CTkButton(self, text='Download', width=100, height=24)
             open_button = customtkinter.CTkButton(self, text='Open', width=100, height=24, state = 'disabled')
-            prog_bar = customtkinter.CTkProgressBar(self, width=440, height=5)
+            prog_bar = customtkinter.CTkProgressBar(self, height=5)
             prog_bar.set(0)
             q = queue.Queue()
 
@@ -255,7 +270,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
                 title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky='w')
                 status.grid(row=len(self.title_label_list), column=2, pady=(0, 10),padx=(0, 0), sticky='e')
                 size_label.grid(row=len(self.title_label_list), column=3, padx=(10, 5), pady=(0, 10), sticky='e')
-                prog_bar.grid(row=len(self.dlbutton_list), column=0, columnspan=3, pady=(15, 0), sticky='w')
+                prog_bar.grid(row=len(self.dlbutton_list), column=0, columnspan=3, pady=(15, 0), sticky='ew')
                 dlbutton.grid(row=len(self.dlbutton_list), column=4, pady=(0, 10), padx=0, sticky='e')
                 open_button.grid(row=len(self.dlbutton_list), column=5, pady=(0, 10), padx=(0, 0), sticky='e')
             else:
@@ -290,11 +305,11 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
                 self.open_button_list.remove(open_button)
                 self.prog_bar_list.remove(prog_bar)
 
-
 #Main window and some button functionality. Vaguely named widgets are in order of how they appear on screen.
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        self.hash_executor = ThreadPoolExecutor(max_workers=4)
         self._search_thread = None
         self.session = requests.Session()
         self.running = True
@@ -334,11 +349,19 @@ class App(customtkinter.CTk):
         self.button4 = customtkinter.CTkButton(master=self, command=self.button_settings, text='Settings', width = 125)
         self.button4.grid(row=2, column=4, padx=4, pady=(0,6), sticky='ew')
 
+    #Handle closing the window while threads are running.
     def on_closing(self):
         self.running = False
         self.session.close()
+
+        try:
+            self.hash_executor.shutdown(wait=False)
+        except Exception:
+            pass
+
         self.wait_for_thread()
 
+    #Waits for thread to finish what it's doing before closing the window.
     def wait_for_thread(self):
         if self._search_thread is not None and self._search_thread.is_alive():
             self.after(100, self.wait_for_thread)
@@ -347,6 +370,39 @@ class App(customtkinter.CTk):
                 self.destroy()
             except Exception:
                 pass
+
+    #Checks the hash of the file in a separate thread to avoid freezing the UI.
+    def hash_check_worker(self, index, fileloc, console, sha1):
+        try:
+            hash_obj = hashlib.sha1()
+            with open(fileloc, 'rb') as f:
+                if console in ('PlayStation 3', 'PlayStation Vita'):
+                    filesize = os.path.getsize(fileloc)
+                    remaining = max(0, filesize - 32)
+                    while remaining > 0:
+                        chunk = f.read(min(4 * 1024 * 1024, remaining))
+                        if not chunk:
+                            break
+                        hash_obj.update(chunk)
+                        remaining -= len(chunk)
+                else:
+                    for chunk in iter(lambda: f.read(4 * 1024 * 1024), b''):
+                        hash_obj.update(chunk)
+            match = (sha1.upper() == hash_obj.hexdigest().upper())
+
+        except Exception:
+            match = False
+
+        #Updates the UI based on the hash check result.
+        def update_ui():
+            self.textbox.dlbutton_list[index].configure(state='normal')
+            self.textbox.open_button_list[index].configure(state='normal')
+            if match:
+                self.textbox.status_list[index].configure(text_color='green', text='Already Owned!')
+            else:
+                self.textbox.status_list[index].configure(text_color='red', text='HASH MISMATCH DETECTED!')
+
+        self.after(0, update_ui)
 
     #Opens the file location. Used with the open button.
     def open_loc(self, download_path):
@@ -384,6 +440,7 @@ class App(customtkinter.CTk):
                         title_id = index
                         self.search(title_id, console)
                         self.search_no_drm(title_id, console)
+
         self.button1.configure(state = 'normal')
         self.button2.configure(state = 'normal')
         self.button3.configure(state = 'normal')
@@ -490,12 +547,7 @@ class App(customtkinter.CTk):
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
 
                 #Check the hash in case an incomplete or corrupt file already exists. Then handle errors in search results.
-                hash_match = is_shit_there(self, download_path, index, fileloc, console, sha1)
-                if hash_match == 1:
-                    self.textbox.status_list[index].configure(text_color = 'green', text='Already Owned!')
-                elif hash_match == 2:
-                    self.textbox.status_list[index].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
-                else: pass
+                is_shit_there(self, download_path, index, fileloc, console, sha1, update_size)
         elif game_name == 'Invalid ID':
             self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
         else: self.textbox.add_item(game_name + title_id, '', '', '', '', 0, '', '', '', '')
@@ -544,16 +596,12 @@ class App(customtkinter.CTk):
                     self.textbox.add_item(game_name, title_id, ' DRM-Free v' + version, url_list[i], console, update_size_list[i], sha1_list[i], index_list[i], download_path, fileloc)
 
                     #Check the hash in case an incomplete or corrupt file already exists. Errors in search results are handled by the other search, so we just pass here.
-                    hash_match = is_shit_there(self, download_path, index_list[i], fileloc, console, sha1_list[i])
-                    if hash_match == 1:
-                        self.textbox.status_list[index_list[i]].configure(text_color = 'green', text='Already Owned!')
-                    elif hash_match == 2:
-                        self.textbox.status_list[index_list[i]].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
-                    else: pass
+                    is_shit_there(self, download_path, index_list[i], fileloc, console, sha1_list[i], update_size_list[i])
                     i = i+1
             else: pass
         else: pass
 
+    #Handles users searching for PS5 updates.
     def search_ps5_update(self, title_id):
         name = 'PlayStation 5 title updates are not supported yet.'
         self.textbox.add_item(name, '', '', '', '', 0, '', '', '', '')
@@ -587,6 +635,7 @@ class App(customtkinter.CTk):
                 update_file = 'v' + ver + ' ' + path.basename(url)
                 fileloc = (download_path + '/' + update_file)
                 self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
+                is_shit_there(self, download_path, index, fileloc, console, sha1, update_size)
         else: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '')
 
     #Searches for PS4 or Vita update info and populates the widgets in the frame based on that info.
@@ -664,6 +713,7 @@ class App(customtkinter.CTk):
                 update_file = 'v' + ver_list[i] + ' ' + update_data_list[i] + ' ' + path.basename(url)
                 fileloc = (download_path + '/' + update_file)
                 self.textbox.add_item(game_name, title_id, ' v' + ver_list[i], url, console, update_size_list[i], sha1, index_list[i], download_path, fileloc)
+                is_shit_there(self, download_path, index_list[i], fileloc, console, sha1, update_size_list[i])
                 i = i+1
         else: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '')
 
@@ -720,7 +770,7 @@ class App(customtkinter.CTk):
                                 f.flush()
                                 i = i+(1/(size/(len(chunk))))
                                 h = round(h+((len(chunk))/1024000),2)
-                                self.textbox.prog_bar_list[index].set(i)
+                                self.after(0, lambda: self.textbox.prog_bar_list[index].set(i))
                                 self.textbox.status_list[index].configure(text_color = 'green', text= str(h) + '/' + str(round((size/1024000),2)) + 'MB' )
                             if self.textbox.queue_list[index].empty() == False: break
                         else: break
@@ -732,12 +782,7 @@ class App(customtkinter.CTk):
             if self.textbox.status_list[index].cget('text') == 'Download Cancelled!':
                 os.remove(fileloc)
             else:
-                hash_match = is_shit_there(self, download_path, index, fileloc, console, sha1)
-                if hash_match == 1:
-                    self.textbox.status_list[index].configure(text_color = 'green', text='Download Complete!')
-                elif hash_match == 2:
-                    self.textbox.status_list[index].configure(text_color = 'red', text='HASH MISMATCH DETECTED!')
-                else: pass
+                is_shit_there(self, download_path, index, fileloc, console, sha1, size)
 
     #Downloads all files, or only new files based on the check box in the downall window. Pretty sure it belongs in the DownloadAllWindow class.
     def downall(self):
@@ -796,7 +841,6 @@ class App(customtkinter.CTk):
             self.toplevel_window = SettingsWindow(self)
         else:
             self.toplevel_window.focus()
-
 
 if __name__ == '__main__':
     app = App()
