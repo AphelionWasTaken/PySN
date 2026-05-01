@@ -103,10 +103,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.5.3
-          release_name: v2.5.3
+          tag_name: v2.5.4
+          release_name: v2.5.4
           body: |
-            A little more cleanup.
+            Stop downloads and reset progress bar when the clear list button is pressed.
           draft: false
           prerelease: false
 

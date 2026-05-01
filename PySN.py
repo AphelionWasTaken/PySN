@@ -941,6 +941,19 @@ class App(customtkinter.CTk):
 
     #Behavior for the Clear button. Clears the list.
     def button_clear(self):
+        for q in self.textbox.queue_list:
+            try:
+                q.put(ButtonAction.STOP)
+            except Exception:
+                pass
+            
+        time.sleep(0.1)
+
+        self.total_download_size = 0
+        self.completed_download_size = 0
+        self.after(0, lambda: self.total_prog_bar.set(0))
+        self.after(0, lambda: self.prog_status_label.configure(text='0/0 MB'))
+
         self.textbox.destroy()
         self.textbox = ScrollableLabelButtonFrame(master=self, command=self.frame_button_download, corner_radius=5)
         self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=(5,5), sticky='nsew')
