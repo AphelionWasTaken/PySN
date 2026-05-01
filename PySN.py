@@ -285,8 +285,11 @@ class App(customtkinter.CTk):
         self.title('PySN')
         self.resizable(0,1)
         self.toplevel_window = None
-        self.stop_down = False
-        self.grid_rowconfigure((0, 2), weight=0)
+        self.total_download_size = 0
+        self.completed_download_size = 0
+        self.after(50, self.update_total_progress_ui)
+        self._download_lock = threading.Lock()
+        self.grid_rowconfigure((0, 2, 3), weight=0)
         self.grid_rowconfigure((1), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
         self.bind('<Return>', lambda event: self.button_search())
@@ -306,15 +309,24 @@ class App(customtkinter.CTk):
         self.textbox = ScrollableLabelButtonFrame(master=self, command=self.frame_button_download, corner_radius=5)
         self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=(5,5), sticky='nsew')
 
+        self.prog_label = customtkinter.CTkLabel(self, text= 'Total Progress:', anchor='w')
+        self.prog_label.grid(row=2, column=0, pady=(0, 25), padx=(15, 0), sticky='w')
+        self.prog_status_label = customtkinter.CTkLabel(self, text= '0/0 MB', anchor='e')
+        self.prog_status_label.grid(row=2, column=4, pady=(0, 25), padx=(0, 15), sticky='e')
+        self.total_prog_bar = customtkinter.CTkProgressBar(self, height=5)
+        self.total_prog_bar.set(0)
+        self.total_prog_bar.grid(row=2, column=0, columnspan=5, pady=(15, 15), padx=(15, 15), sticky='ew')
+
+
         self.button2 = customtkinter.CTkButton(master=self, command=self.button_downall, text='Download All', width = 125)
-        self.button2.grid(row=2, column=0, padx=(4,2), pady=(0,6), sticky='ew')
+        self.button2.grid(row=3, column=0, padx=(4,2), pady=(0,6), sticky='ew')
         self.button3 = customtkinter.CTkButton(master=self, command=self.button_clear, text='Clear', width = 125)
-        self.button3.grid(row=2, column=1, padx=(2,2), pady=(0,6), sticky='ew')
+        self.button3.grid(row=3, column=1, padx=(2,2), pady=(0,6), sticky='ew')
         self.clearbox = customtkinter.CTkCheckBox(master=self, text='Clear List On Search')
-        self.clearbox.grid(row=2, column=2, columnspan=2, padx=(2,4), pady=(0,6), sticky='w')
+        self.clearbox.grid(row=3, column=2, columnspan=2, padx=(2,4), pady=(0,6), sticky='w')
         self.clearbox.select()
         self.button4 = customtkinter.CTkButton(master=self, command=self.button_settings, text='Settings', width = 125)
-        self.button4.grid(row=2, column=4, padx=4, pady=(0,6), sticky='ew')
+        self.button4.grid(row=3, column=4, padx=4, pady=(0,6), sticky='ew')
 
     #Handle closing the window while threads are running.
     def on_closing(self):
@@ -373,6 +385,27 @@ class App(customtkinter.CTk):
                 pass
 
         self.after(0, update_ui)
+
+    #Update the total progress bar and label.
+    def update_total_progress_ui(self):
+        with self._download_lock:
+            total_bytes = self.total_download_size
+            completed_bytes = self.completed_download_size
+
+        if total_bytes > 0:
+            progress = completed_bytes / total_bytes
+        else:
+            progress = 0
+
+        total_mb = total_bytes / 1024000
+        completed_mb = completed_bytes / 1024000
+
+        self.total_prog_bar.set(progress)
+        self.prog_status_label.configure(
+            text=f"{completed_mb:.2f}/{total_mb:.2f}MB"
+        )
+
+        self.after(50, self.update_total_progress_ui)
 
     #Checks if the download path already exists and if hashes match. Changes the buttons and status label accordingly.
     def is_shit_there(self, download_path, index, fileloc, console, sha1, expected_size=None):
@@ -735,15 +768,9 @@ class App(customtkinter.CTk):
         q.put(ButtonAction.STOP)
 
     #Creates directories, updates buttons, downloads the update file, and checks the hash.
-    def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem):
+    def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem, prog_bar, status, dl_button, open_button, q):
         if size > 0:
             with sem:
-                prog_bar = self.textbox.prog_bar_list[index]
-                status = self.textbox.status_list[index]
-                dl_button = self.textbox.dlbutton_list[index]
-                open_button = self.textbox.open_button_list[index]
-                q = self.textbox.queue_list[index]
-
                 def try_configure(widget, **kwargs):
                     try:
                         widget.configure(**kwargs)
@@ -763,45 +790,59 @@ class App(customtkinter.CTk):
                 i=0
                 h=0
                 last_ui_update = 0
+                downloaded_bytes = 0
+                size_mb = f"{round(size / 1024000, 2)}"
 
                 #send a request to the update files URL. Handle threads and download behavior based on the button state.
                 with self.session.get(url, stream=True, verify=False) as r:
                     r.raise_for_status()
                     with open(fileloc,'wb') as f:
-                        while True:
+                        for chunk in r.iter_content(chunk_size=(1024*1024)):
                             try:
-                                action = self.textbox.queue_list[index].get_nowait()
+                                action = q.get_nowait()
                                 if action == ButtonAction.PAUSE:
                                     try_configure(status, text_color = 'yellow', text='Paused')
-                                    new_action = self.textbox.queue_list[index].get()
-                                    if new_action == ButtonAction.RESUME:
-                                        try_configure(status, text_color = 'green', text='Downloading')
-                                        continue
-                                    elif new_action == ButtonAction.STOP:
-                                        try_configure(status, text_color = 'red', text='Download Cancelled!')
+                                    new_action = q.get()
+                                    if new_action == ButtonAction.STOP:
+                                        try_configure(status, text_color='red', text='Download Cancelled!')
                                         break
+                                    try_configure(status, text_color='green', text='Downloading')
                                 elif action == ButtonAction.STOP:
                                     try_configure(status, text_color = 'red', text='Download Cancelled!')
                                     break
                             except queue.Empty:
                                 pass
+                            
+                            #Check if download gets cancelled
+                            if status.cget('text') == 'Download Cancelled!':
+                                cancelled = True
+                                break
 
                             #Download the file and update the progress bar and status label based on how much has downloaded.
-                            size_mb = f"{round(size / 1024000, 2)}"
-                            for chunk in r.iter_content(chunk_size=(1024*1024)):
-                                if chunk:
-                                    f.write(chunk)
-                                    i = i + (1/(size/(len(chunk))))
-                                    h = h + len(chunk) / 1024000
+                            if chunk:
+                                f.write(chunk)
+                                i = i + (1/(size/(len(chunk))))
+                                h = h + len(chunk) / 1024000
+                                downloaded_bytes = downloaded_bytes + len(chunk)
+                                with self._download_lock:
+                                    self.completed_download_size = self.completed_download_size + len(chunk)
 
-                                    now = time.monotonic()
-                                    if now - last_ui_update > 0.01:
-                                        last_ui_update = now
-                                        val = i
-                                        self.after(0, lambda v = val: try_set(prog_bar, v))
-                                        try_configure(status, text_color = 'green', text= f"{h:.2f}/{size_mb}MB")
-                                if q.empty() == False: break
-                            else: break
+                                now = time.monotonic()
+                                if now - last_ui_update > 0.01:
+                                    last_ui_update = now
+                                    self.after(0, lambda v = i: try_set(prog_bar, v))
+                                    try_configure(status, text_color = 'green', text= f"{h:.2f}/{size_mb}MB")
+
+                            if q.empty() == False: break
+
+                        #After the download loop, check if the download was cancelled. If it was, remove the file and update the completed download size.
+                        if cancelled:
+                            try:
+                                os.remove(fileloc)
+                            except:
+                                pass
+                            with self._download_lock:
+                                self.completed_download_size = self.completed_download_size - downloaded_bytes
 
                 #After the file is downloaded, reconfigure the dl and open button behavior.
                 #Then remove the file if the dl was cancelled. If it completed, run is_shit_there to check the hash and configure buttons properly.
@@ -819,15 +860,27 @@ class App(customtkinter.CTk):
         self.toplevel_window.destroy()
         for item in self.textbox.dlbutton_list:
             text = item.cget('text')
-            if only_new == 0 and text in ('Download'):
+            if only_new == 1 and text in ('Download'):
                 item.invoke()
-            elif only_new == 1 and text in ('Download', 'Redownload'):
+            elif only_new == 0 and text in ('Download', 'Redownload'):
                 item.invoke()
 
     #If you want to clear the frame on each search, the search button will destroy it and recreate it, then search.
     #Otherwise it will clear error labels such as 'Invalid ID' before appending the list.
     def button_search(self):
         if self.clearbox.get() == 1:
+            for q in self.textbox.queue_list:
+                try:
+                    q.put(ButtonAction.STOP)
+                except Exception:
+                    pass
+            
+            time.sleep(0.1)
+
+            self.total_download_size = 0
+            self.completed_download_size = 0
+            self.after(0, lambda: self.total_prog_bar.set(0))
+            self.after(0, lambda: self.prog_status_label.configure(text='0/0 MB'))
             self.textbox.destroy()
             self.textbox = ScrollableLabelButtonFrame(master=self, command=self.frame_button_download, corner_radius=5)
             self.textbox.grid(row=1, column=0, columnspan=5, padx=4, pady=(5,5), sticky='nsew')
@@ -843,7 +896,15 @@ class App(customtkinter.CTk):
 
     #Behavior for the Download button.
     def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):
-        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, self.download_semaphore), daemon = True).start()
+        prog_bar = self.textbox.prog_bar_list[index]
+        status = self.textbox.status_list[index]
+        dl_button = self.textbox.dlbutton_list[index]
+        open_button = self.textbox.open_button_list[index]
+        q = self.textbox.queue_list[index]
+        
+        with self._download_lock:
+            self.total_download_size = self.total_download_size + update_size
+        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, self.download_semaphore, prog_bar, status, dl_button, open_button, q), daemon = True).start()
 
     #Behavior for the Download All button. Opens the download all window.
     def button_downall(self):
