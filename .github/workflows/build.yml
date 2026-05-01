@@ -103,18 +103,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.4.0
-          release_name: v2.4.0
+          tag_name: v2.5.0
+          release_name: v2.5.0
           body: |
-            Hash files asynchronously to speed up games.yml search when many updates are owned.
-
-            Hash files in chunks to speed up hashing of large files and reduce memory usage.
-
-            Set the progress bar to 100% for files that are already owned for better visibility.
-
-            Change mousewheel scolling sensitivity for faster scrolling.
-
-            Check for correct size of firmware files that do not have a hash to check.
+            Largest refactor of PySN to date.
+            - Major speed improvements, particularly when searching for firmware or parsing games.yml.
+              - Fetch FW locales concurrently.
+              - Parse games.yml concurrently (results in updates being listed out of order, but is ~10x faster).
+              - Use session objects and connection pooling for all requests.
+            - Massive cleanup to codebase.
+              - Removed redundant requests and function calls.
+              - Reorganized code into more logical classes and functions.
+              - Perform tasks on the proper threads.
+              - Reduce UI spam during downloads.
+              - Handle some invisible errors when downloading all from games.yml or searching while still downloading.
+            - Limit simultaneous downloads to 12 to prevent thrashing drives. I'm happy to increase this if requested.
           draft: false
           prerelease: false
 
