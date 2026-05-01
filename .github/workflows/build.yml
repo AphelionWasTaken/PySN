@@ -103,21 +103,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.5.0
-          release_name: v2.5.0
+          tag_name: v2.5.1
+          release_name: v2.5.1
           body: |
-            Largest refactor of PySN to date.
-            - Major speed improvements, particularly when searching for firmware or parsing games.yml.
-              - Fetch FW locales concurrently.
-              - Parse games.yml concurrently (results in updates being listed out of order, but is ~10x faster).
-              - Use session objects and connection pooling for all requests.
-            - Massive cleanup to codebase.
-              - Removed redundant requests and function calls.
-              - Reorganized code into more logical classes and functions.
-              - Perform tasks on the proper threads.
-              - Reduce UI spam during downloads.
-              - Handle some invisible errors when downloading all from games.yml or searching while still downloading.
-            - Limit simultaneous downloads to 12 to prevent thrashing drives. I'm happy to increase this if requested.
+            Add a total progress bar to the UI that shows the overall progress of all downloads.
+
+            Fix reversed "Download All" button behavior.
+
+            Fix a race condition that could occur when searching while downloading.
+
+            Stop downloads from completing if the user interrupts them with a search if the list is cleared.
+
+            Some additional cleanup.
           draft: false
           prerelease: false
 
