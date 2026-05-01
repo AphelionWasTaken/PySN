@@ -204,17 +204,27 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
 
     #Creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
     def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, fileloc):
+        downloadable = False
         try:
             #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
+            #Firmware
             if len(title_id) == 2 and sha1 == 'N/A':
                 title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
+                downloadable = True
+            #DRM-Free updates and Japanese titles
             elif ((ver.startswith(' DRM-Free') and len(name)>9 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found') or
             ('\u3040' <= name[0] <= '\u30FF' or '\u4E00' <= name[0] <= '\u9FFF' or '\uFF65' <= name[0] <= '\uFF9F')):
                 title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:9] + '...', anchor='w')
+                downloadable = True
+            #Truncate regular updates with long names
             elif len(name)>18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
                 title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name[:18] + '...', anchor='w')
+                downloadable = True
+            #Regular updates with short names
             elif len(name)<=18 and not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
                 title_label = customtkinter.CTkLabel(self, text= title_id + ver + ' - ' + name, anchor='w')
+                downloadable = True
+            #invalid IDs and titles with no updates available
             else:
                 title_label = customtkinter.CTkLabel(self, text= title_id + ver + name, anchor='center')
 
@@ -243,13 +253,22 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
                 title_label.grid(row=len(self.title_label_list), column=0, columnspan=8, pady=(0, 10))
 
             #Appends the list of widgets, so that we can refer to them specifically later.
-            self.title_label_list.append(title_label)
-            self.size_label_list.append(size_label)
-            self.status_list.append(status)
-            self.queue_list.append(q)
-            self.dlbutton_list.append(dlbutton)
-            self.open_button_list.append(open_button)
-            self.prog_bar_list.append(prog_bar)
+            if downloadable == True:
+                self.title_label_list.append(title_label)
+                self.size_label_list.append(size_label)
+                self.status_list.append(status)
+                self.queue_list.append(q)
+                self.dlbutton_list.append(dlbutton)
+                self.open_button_list.append(open_button)
+                self.prog_bar_list.append(prog_bar)
+            else:
+                self.title_label_list.append(None)
+                self.size_label_list.append(None)
+                self.status_list.append(None)
+                self.queue_list.append(None)
+                self.dlbutton_list.append(None)
+                self.open_button_list.append(None)
+                self.prog_bar_list.append(None)
         except Exception:
             return
 
@@ -768,15 +787,9 @@ class App(customtkinter.CTk):
         q.put(ButtonAction.STOP)
 
     #Creates directories, updates buttons, downloads the update file, and checks the hash.
-    def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem):
+    def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem, prog_bar, status, dl_button, open_button, q):
         if size > 0:
             with sem:
-                prog_bar = self.textbox.prog_bar_list[index]
-                status = self.textbox.status_list[index]
-                dl_button = self.textbox.dlbutton_list[index]
-                open_button = self.textbox.open_button_list[index]
-                q = self.textbox.queue_list[index]
-
                 def try_configure(widget, **kwargs):
                     try:
                         widget.configure(**kwargs)
@@ -866,6 +879,8 @@ class App(customtkinter.CTk):
         only_new = self.toplevel_window.only_new_check.get()
         self.toplevel_window.destroy()
         for item in self.textbox.dlbutton_list:
+            if item is None:
+                continue
             text = item.cget('text')
             if only_new == 1 and text in ('Download'):
                 item.invoke()
@@ -902,10 +917,16 @@ class App(customtkinter.CTk):
         self._search_thread.start()
 
     #Behavior for the Download button.
-    def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):     
+    def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):
+        prog_bar = self.textbox.prog_bar_list[index]
+        status = self.textbox.status_list[index]
+        dl_button = self.textbox.dlbutton_list[index]
+        open_button = self.textbox.open_button_list[index]
+        q = self.textbox.queue_list[index]
+        
         with self._download_lock:
             self.total_download_size = self.total_download_size + update_size
-        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, self.download_semaphore), daemon = True).start()
+        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, self.download_semaphore, prog_bar, status, dl_button, open_button, q), daemon = True).start()
 
     #Behavior for the Download All button. Opens the download all window.
     def button_downall(self):
