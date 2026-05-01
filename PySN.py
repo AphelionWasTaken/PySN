@@ -768,9 +768,15 @@ class App(customtkinter.CTk):
         q.put(ButtonAction.STOP)
 
     #Creates directories, updates buttons, downloads the update file, and checks the hash.
-    def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem, prog_bar, status, dl_button, open_button, q):
+    def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem):
         if size > 0:
             with sem:
+                prog_bar = self.textbox.prog_bar_list[index]
+                status = self.textbox.status_list[index]
+                dl_button = self.textbox.dlbutton_list[index]
+                open_button = self.textbox.open_button_list[index]
+                q = self.textbox.queue_list[index]
+
                 def try_configure(widget, **kwargs):
                     try:
                         widget.configure(**kwargs)
@@ -792,6 +798,7 @@ class App(customtkinter.CTk):
                 last_ui_update = 0
                 downloaded_bytes = 0
                 size_mb = f"{round(size / 1024000, 2)}"
+                cancelled = False
 
                 #send a request to the update files URL. Handle threads and download behavior based on the button state.
                 with self.session.get(url, stream=True, verify=False) as r:
@@ -895,16 +902,10 @@ class App(customtkinter.CTk):
         self._search_thread.start()
 
     #Behavior for the Download button.
-    def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):
-        prog_bar = self.textbox.prog_bar_list[index]
-        status = self.textbox.status_list[index]
-        dl_button = self.textbox.dlbutton_list[index]
-        open_button = self.textbox.open_button_list[index]
-        q = self.textbox.queue_list[index]
-        
+    def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):     
         with self._download_lock:
             self.total_download_size = self.total_download_size + update_size
-        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, self.download_semaphore, prog_bar, status, dl_button, open_button, q), daemon = True).start()
+        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, self.download_semaphore), daemon = True).start()
 
     #Behavior for the Download All button. Opens the download all window.
     def button_downall(self):

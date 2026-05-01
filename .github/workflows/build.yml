@@ -103,18 +103,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.5.1
-          release_name: v2.5.1
+          tag_name: v2.5.2
+          release_name: v2.5.2
           body: |
-            Add a total progress bar to the UI that shows the overall progress of all downloads.
-
-            Fix reversed "Download All" button behavior.
-
-            Fix a race condition that could occur when searching while downloading.
-
-            Stop downloads from completing if the user interrupts them with a search if the list is cleared.
-
-            Some additional cleanup.
+            Fix an issue with the download all button where it was stopping at entries without widgets.
           draft: false
           prerelease: false
 
