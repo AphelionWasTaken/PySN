@@ -19,44 +19,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 requests.packages.urllib3.disable_warnings()
 
-#Checks if the download path already exists and if hashes match. Changes the buttons and status label accordingly.
-def is_shit_there(self, download_path, index, fileloc, console, sha1, expected_size=None):
-    if not path.exists(fileloc):
-        return 0
-
-    self.textbox.status_list[index].configure(text_color='yellow',text='Checking Hash...')
-    self.textbox.dlbutton_list[index].configure(text='Redownload', state='disabled')
-    self.textbox.open_button_list[index].configure(
-        text='Open',
-        state='disabled',
-        command=lambda: self.open_loc(download_path)
-    )
-    self.after(0, lambda: self.textbox.prog_bar_list[index].set(1))
-
-    actual_size = os.path.getsize(fileloc)
-    if actual_size != expected_size:
-        self.textbox.status_list[index].configure(text_color='red', text='Size Mismatch!')
-        self.textbox.dlbutton_list[index].configure(state='normal')
-        self.textbox.open_button_list[index].configure(state='normal')
-        return 1
-
-    if sha1 == 'N/A':
-        self.textbox.status_list[index].configure(text_color='green', text='Already Owned!')
-        self.textbox.dlbutton_list[index].configure(state='normal')
-        self.textbox.open_button_list[index].configure(state='normal')
-        return 1
-
-    self.hash_executor.submit(self.hash_check_worker, index, fileloc, console, sha1)
-
-    if self.hash_executor._work_queue.qsize() > 8:
-        time.sleep(0.05)
-
-    return 1
-
 #Creates a directory for the game in the download path.
 def create_directories(download_path):
     if not path.exists(download_path):
-        makedirs(download_path)
+        makedirs(download_path, exist_ok=True)
     return download_path
 
 def resource_path(relative_path):
@@ -310,6 +276,7 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.hash_executor = ThreadPoolExecutor(max_workers=4)
+        self.download_semaphore = threading.Semaphore(12)
         self._search_thread = None
         self.session = requests.Session()
         self.running = True
@@ -395,18 +362,57 @@ class App(customtkinter.CTk):
 
         #Updates the UI based on the hash check result.
         def update_ui():
-            self.textbox.dlbutton_list[index].configure(state='normal')
-            self.textbox.open_button_list[index].configure(state='normal')
-            if match:
-                self.textbox.status_list[index].configure(text_color='green', text='Already Owned!')
-            else:
-                self.textbox.status_list[index].configure(text_color='red', text='HASH MISMATCH DETECTED!')
+            try:
+                self.textbox.dlbutton_list[index].configure(state='normal')
+                self.textbox.open_button_list[index].configure(state='normal')
+                if match:
+                    self.textbox.status_list[index].configure(text_color='green', text='Already Owned!')
+                else:
+                    self.textbox.status_list[index].configure(text_color='red', text='HASH MISMATCH DETECTED!')
+            except Exception:
+                pass
 
         self.after(0, update_ui)
+
+    #Checks if the download path already exists and if hashes match. Changes the buttons and status label accordingly.
+    def is_shit_there(self, download_path, index, fileloc, console, sha1, expected_size=None):
+        if not path.exists(fileloc):
+            return 0
+
+        self.textbox.status_list[index].configure(text_color='yellow',text='Checking Hash...')
+        self.textbox.dlbutton_list[index].configure(text='Redownload', state='disabled')
+        self.textbox.open_button_list[index].configure(
+            text='Open',
+            state='disabled',
+            command=lambda: self.open_loc(download_path)
+        )
+        self.textbox.prog_bar_list[index].set(1)
+
+        actual_size = os.path.getsize(fileloc)
+        if actual_size != expected_size:
+            self.textbox.status_list[index].configure(text_color='red', text='Size Mismatch!')
+            self.textbox.dlbutton_list[index].configure(state='normal')
+            self.textbox.open_button_list[index].configure(state='normal')
+            return 1
+
+        if sha1 == 'N/A':
+            self.textbox.status_list[index].configure(text_color='green', text='Already Owned!')
+            self.textbox.dlbutton_list[index].configure(state='normal')
+            self.textbox.open_button_list[index].configure(state='normal')
+            return 1
+
+        self.hash_executor.submit(self.hash_check_worker, index, fileloc, console, sha1)
+        return 1
 
     #Opens the file location. Used with the open button.
     def open_loc(self, download_path):
         customtkinter.filedialog.askopenfilenames(initialdir=download_path)
+
+    def search_ps3_ps4_vita(self, title_id, console):
+        root, name = self.request_update(title_id, console)
+        self.search(title_id, console, root, name)
+        if console == 'PlayStation 3':
+            self.search_no_drm(title_id, console, root, name)
 
     #If the "search games.yml" box is not checked, assign the title id and console based on the users input, the search. If the console is PS3, search for DRM-free updates too.
     #If the "search games.yml" box is checked, automatically assign the console to PS3, and search for each title id on the games.yml.
@@ -421,9 +427,7 @@ class App(customtkinter.CTk):
             elif console == 'PlayStation 5':
                 self.search_ps5_update(title_id)
             else:
-                self.search(title_id, console)
-                if console == 'PlayStation 3':
-                    self.search_no_drm(title_id, console)
+                self.search_ps3_ps4_vita(title_id, console)
         else:
             console = 'PlayStation 3'
             if sys.platform.startswith('linux'):
@@ -434,17 +438,18 @@ class App(customtkinter.CTk):
                 with open(yml_dir, 'r') as f:
                     file = yaml.safe_load(f)
                     alist = list(file)
-                    for index in alist:
-                        if not self.running:
-                            return
-                        title_id = index
-                        self.search(title_id, console)
-                        self.search_no_drm(title_id, console)
+                    with ThreadPoolExecutor(max_workers=6) as executor:
+                        for index in alist:
+                            if not self.running:
+                                break
+                            executor.submit(self.search_ps3_ps4_vita, index, console)
 
-        self.button1.configure(state = 'normal')
-        self.button2.configure(state = 'normal')
-        self.button3.configure(state = 'normal')
-        self.button4.configure(state = 'normal')
+        self.after(0, lambda: (
+            self.button1.configure(state='normal'),
+            self.button2.configure(state='normal'),
+            self.button3.configure(state='normal'),
+            self.button4.configure(state='normal')
+        ))
 
     #Assigns hashes and urls based on console and title id, checks if the url is valid, returns the xml and game name.
     def request_update(self, title_id, console):
@@ -481,11 +486,11 @@ class App(customtkinter.CTk):
 
    #Checks if the url is valid, returns a list of xml and txt contents.
     def request_fw(self, console):
-        root_list = []
+        url_list = []
 
         if console == 'PlayStation Vita':
             locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn']
-        if console == 'PlayStation 3':
+        elif console == 'PlayStation 3':
             locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'br']
         else:
             locale_list = ['us', 'eu', 'jp', 'kr', 'uk', 'mx', 'au', 'sa', 'tw', 'ru', 'cn', 'br']
@@ -500,35 +505,36 @@ class App(customtkinter.CTk):
                 info_url = 'http://f' + locale + '01.ps5.update.playstation.net/update/ps5/official/'+ obf + '/list/'+ locale + '/updatelist.xml'
             else:
                 info_url = 'https://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
+            url_list.append(info_url)
 
+        def fetch_locale(info_url):
             try:
                 var_url = self.session.get(info_url, stream=True, verify=False, timeout=10)
+                if var_url.status_code == 200 and var_url.text != '':
+                    if console == 'PlayStation 3':
+                        return BeautifulSoup(var_url.text, 'html.parser')
+                    else:
+                        return ET.fromstring(var_url.content)
             except Exception:
-                continue
-            if var_url.status_code == 200 and var_url.text != '':
-                if console == 'PlayStation 3':
-                    root_list.append(BeautifulSoup(var_url.text, 'html.parser'))
-                else:
-                    root_list.append(ET.fromstring(var_url.content))
+                return None
 
-        return root_list
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            results = list(executor.map(fetch_locale, url_list))
+            
+        return [r for r in results if r is not None]
 
     #Requests game/update info and creates widgets in the frame based on that info.
-    def search(self, title_id, console):
-        if not self.running:
-            return
-        root, game_name = self.request_update(title_id, console)
+    def search(self, title_id, console, root, game_name):
         if not self.running:
             return
 
         #If the xml exists, iterate through the package element to get info about the update. If it's a PS4 title, load and iterate through the JSON for data.
         if root != 0:
             for item in root.iter('package'):
-                index = len(self.textbox.dlbutton_list)
                 ver = (item.get('version'))
                 if console == 'PlayStation 4':
                     man_url = (item.get('manifest_url'))
-                    json_url = requests.get(man_url, stream = True)
+                    json_url = self.session.get(man_url, stream=True, verify=False, timeout=10)
                     json_cont = json.loads(json_url.content)
                     for item in (json_cont['pieces']):
                         url = (item.get('url'))
@@ -543,20 +549,18 @@ class App(customtkinter.CTk):
                 name = game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip()
                 download_path = save_dir + console + '/' + title_id + ' ' + name
                 update_file = path.basename(url)
-                fileloc = (download_path + '/' + update_file) 
-                self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
+                fileloc = (download_path + '/' + update_file)
+                self.after(0, lambda gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
+                          (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
+                           self.is_shit_there(dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
 
-                #Check the hash in case an incomplete or corrupt file already exists. Then handle errors in search results.
-                is_shit_there(self, download_path, index, fileloc, console, sha1, update_size)
         elif game_name == 'Invalid ID':
-            self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '')
-        else: self.textbox.add_item(game_name + title_id, '', '', '', '', 0, '', '', '', '')
+            self.after(0, lambda: self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', ''))
+        else:
+            self.after(0, lambda gn=game_name, tid=title_id: self.textbox.add_item(gn + tid, '', '', '', '', 0, '', '', '', ''))
 
     #Searches specifically for PS3 DRM-free update info, and populates the widgets in the frame based on that info.
-    def search_no_drm(self, title_id, console):
-        if not self.running:
-            return
-        root, game_name = self.request_update(title_id, console)
+    def search_no_drm(self, title_id, console, root, game_name):
         if not self.running:
             return
 
@@ -571,7 +575,6 @@ class App(customtkinter.CTk):
             if drm_free_check == True:
                 i=0
                 package_list = []
-                index_list = []
                 drmfree_list = []
                 sha1_list = []
                 update_size_list = []
@@ -592,11 +595,9 @@ class App(customtkinter.CTk):
                     download_path = (save_dir + console + '/' + title_id + ' ' + name_list[i])
                     update_file = 'DRM-Free ' + path.basename(url_list[i])
                     fileloc = (download_path + '/' + update_file)
-                    index_list.append(len(self.textbox.dlbutton_list))
-                    self.textbox.add_item(game_name, title_id, ' DRM-Free v' + version, url_list[i], console, update_size_list[i], sha1_list[i], index_list[i], download_path, fileloc)
-
-                    #Check the hash in case an incomplete or corrupt file already exists. Errors in search results are handled by the other search, so we just pass here.
-                    is_shit_there(self, download_path, index_list[i], fileloc, console, sha1_list[i], update_size_list[i])
+                    self.after(0, lambda gn=name_list[i], tid=title_id, v=version, u=url_list[i], c=console, us=update_size_list[i], s=sha1_list[i], dp=download_path, fl=fileloc:
+                              (self.textbox.add_item(gn, tid, ' v' + v + ' DRM-Free', u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
+                               self.is_shit_there(dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
                     i = i+1
             else: pass
         else: pass
@@ -604,14 +605,14 @@ class App(customtkinter.CTk):
     #Handles users searching for PS5 updates.
     def search_ps5_update(self, title_id):
         name = 'PlayStation 5 title updates are not supported yet.'
-        self.textbox.add_item(name, '', '', '', '', 0, '', '', '', '')
+        self.after(0, lambda: self.textbox.add_item(name, '', '', '', '', 0, '', '', '', ''))
 
     #Searches for PS3 firmware info, and populates the widgets in the frame based on that info.
     def search_ps3_fw(self, console):
         root_list = self.request_fw(console)
 
         #Split the text in the text file by ; and pull strings that match certain criteria.
-        if root_list[0] != 0:
+        if root_list:
             for root in root_list:
                 text = root.string.split(';')
                 for item in text:
@@ -623,20 +624,23 @@ class App(customtkinter.CTk):
                             region = 'SA'
                     if fnmatch(str(item),'*UPDAT.PUP') == True:
                         url = item[4:]
-                        update_url = requests.get(url, stream=True)
-                        update_size = int(update_url.headers.get('Content-Length'))
+                        update_url = self.session.get(url, stream=True, verify=False, timeout=10)
+                        update_size = int(update_url.headers.get('Content-Length', 0))
+                        
 
                 #There's no hash available to check, so sha1 gets assigned N/A. Title ID becomes region for formatting. set paths and populate widgets.
                 sha1 = 'N/A'
-                index = len(self.textbox.dlbutton_list)
                 title_id = region
                 game_name = console + ' Firmware'
                 download_path = save_dir + console + '/' + game_name + '/' + region
                 update_file = 'v' + ver + ' ' + path.basename(url)
                 fileloc = (download_path + '/' + update_file)
-                self.textbox.add_item(game_name, title_id, ' v' + ver, url, console, update_size, sha1, index, download_path, fileloc)
-                is_shit_there(self, download_path, index, fileloc, console, sha1, update_size)
-        else: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '')
+
+                self.after(0, lambda gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
+                           (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
+                            self.is_shit_there(dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+
+        else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', ''))
 
     #Searches for PS4 or Vita update info and populates the widgets in the frame based on that info.
     def search_ps4_ps5_vita_fw(self, console):
@@ -644,7 +648,6 @@ class App(customtkinter.CTk):
         update_size_list = []
         url_list = []
         ver_list = []
-        index_list = []
         region_list = []
         update_data_list = []
         i=0
@@ -706,94 +709,120 @@ class App(customtkinter.CTk):
 
                 #Assign hash to N/A, assign title_id to region and make the game name look nice.
                 sha1 = 'N/A'
-                index_list.append(len(self.textbox.dlbutton_list))
                 title_id = region_list[i]
                 game_name = console + ' ' + update_data_list[i]
                 download_path = save_dir + console + '/' + console + ' Firmware' + '/' + region_list[i]
                 update_file = 'v' + ver_list[i] + ' ' + update_data_list[i] + ' ' + path.basename(url)
                 fileloc = (download_path + '/' + update_file)
-                self.textbox.add_item(game_name, title_id, ' v' + ver_list[i], url, console, update_size_list[i], sha1, index_list[i], download_path, fileloc)
-                is_shit_there(self, download_path, index_list[i], fileloc, console, sha1, update_size_list[i])
+                
+                self.after(0, lambda gn=game_name, tid=title_id, v=ver_list[i], u=url, c=console, us=update_size_list[i], s=sha1, dp=download_path, fl=fileloc:
+                           (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
+                            self.is_shit_there(dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
                 i = i+1
-        else: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '')
+        else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', ''))
 
     #Pauses and resumes download and sends pause message to the queue.
-    def toggle_pause(self, index):
-        if self.textbox.dlbutton_list[index].cget('text') == 'Pause':
-            self.textbox.dlbutton_list[index].configure(text='Resume')
-            self.textbox.queue_list[index].put(ButtonAction.PAUSE)
+    def toggle_pause(self, dl_button, q):
+        if dl_button.cget('text') == 'Pause':
+            dl_button.configure(text='Resume')
+            q.put(ButtonAction.PAUSE)
         else:
-            self.textbox.dlbutton_list[index].configure(text='Pause')
-            self.textbox.queue_list[index].put(ButtonAction.RESUME)
+            dl_button.configure(text='Pause')
+            q.put(ButtonAction.RESUME)
 
-    #Cancels download and sends stop message to the queue.
-    def cancel(self, index):
-        self.textbox.dlbutton_list[index].configure(text='Download')
-        self.textbox.queue_list[index].put(ButtonAction.STOP)
+    def cancel(self, dl_button, q):
+        dl_button.configure(text='Download')
+        q.put(ButtonAction.STOP)
 
     #Creates directories, updates buttons, downloads the update file, and checks the hash.
     def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem):
-        with sem:
-            if path.exists(download_path) == False:
-                create_directories(download_path)
-            self.textbox.dlbutton_list[index].configure(text='Pause', command=lambda: self.toggle_pause(index))
-            self.textbox.open_button_list[index].configure(text='Cancel', state = 'normal', command=lambda: self.cancel(index))
-            i=0
-            h=0
+        if size > 0:
+            with sem:
+                prog_bar = self.textbox.prog_bar_list[index]
+                status = self.textbox.status_list[index]
+                dl_button = self.textbox.dlbutton_list[index]
+                open_button = self.textbox.open_button_list[index]
+                q = self.textbox.queue_list[index]
 
-            #send a request to the update files URL. Handle threads and download behavior based on the button state.
-            with requests.get(url, stream = True) as r:
-                r.raise_for_status()
-                with open(fileloc,'wb') as f:
-                    while True:
-                        try:
-                            action = self.textbox.queue_list[index].get_nowait()
-                            if action == ButtonAction.PAUSE:
-                                self.textbox.status_list[index].configure(text_color = 'yellow', text='Paused')
-                                new_action = self.textbox.queue_list[index].get()
-                                if new_action == ButtonAction.RESUME:
-                                    self.textbox.status_list[index].configure(text_color = 'green', text='Downloading')
-                                    continue
-                                elif new_action == ButtonAction.STOP:
-                                    self.textbox.status_list[index].configure(text_color = 'red', text='Download Cancelled!')
+                def try_configure(widget, **kwargs):
+                    try:
+                        widget.configure(**kwargs)
+                    except Exception:
+                        pass
+
+                def try_set(widget, val):
+                    try:
+                        widget.set(val)
+                    except Exception:
+                        pass
+
+                if path.exists(download_path) == False:
+                    create_directories(download_path)
+                try_configure(dl_button, text='Pause', command=lambda: self.toggle_pause(dl_button, q))
+                try_configure(open_button, text='Cancel', state = 'normal', command=lambda: self.cancel(dl_button, q))
+                i=0
+                h=0
+                last_ui_update = 0
+
+                #send a request to the update files URL. Handle threads and download behavior based on the button state.
+                with self.session.get(url, stream=True, verify=False) as r:
+                    r.raise_for_status()
+                    with open(fileloc,'wb') as f:
+                        while True:
+                            try:
+                                action = self.textbox.queue_list[index].get_nowait()
+                                if action == ButtonAction.PAUSE:
+                                    try_configure(status, text_color = 'yellow', text='Paused')
+                                    new_action = self.textbox.queue_list[index].get()
+                                    if new_action == ButtonAction.RESUME:
+                                        try_configure(status, text_color = 'green', text='Downloading')
+                                        continue
+                                    elif new_action == ButtonAction.STOP:
+                                        try_configure(status, text_color = 'red', text='Download Cancelled!')
+                                        break
+                                elif action == ButtonAction.STOP:
+                                    try_configure(status, text_color = 'red', text='Download Cancelled!')
                                     break
-                            elif action == ButtonAction.STOP:
-                                self.textbox.status_list[index].configure(text_color = 'red', text='Download Cancelled!')
-                                break
-                        except queue.Empty:
-                            pass
+                            except queue.Empty:
+                                pass
 
-                        #Download the file and update the progress bar and status label based on how much has downloaded.
-                        for chunk in r.iter_content(chunk_size=(1024*1024)):
-                            if chunk:
-                                f.write(chunk)
-                                f.flush()
-                                i = i+(1/(size/(len(chunk))))
-                                h = round(h+((len(chunk))/1024000),2)
-                                self.after(0, lambda: self.textbox.prog_bar_list[index].set(i))
-                                self.textbox.status_list[index].configure(text_color = 'green', text= str(h) + '/' + str(round((size/1024000),2)) + 'MB' )
-                            if self.textbox.queue_list[index].empty() == False: break
-                        else: break
+                            #Download the file and update the progress bar and status label based on how much has downloaded.
+                            size_mb = f"{round(size / 1024000, 2)}"
+                            for chunk in r.iter_content(chunk_size=(1024*1024)):
+                                if chunk:
+                                    f.write(chunk)
+                                    i = i + (1/(size/(len(chunk))))
+                                    h = h + len(chunk) / 1024000
 
-            #After the file is downloaded, reconfigure the dl and open button behavior.
-            #Then remove the file if the dl was cancelled. If it completed, run is_shit_there to check the hash and configure buttons properly.
-            self.textbox.dlbutton_list[index].configure(command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
-            self.textbox.open_button_list[index].configure(text='Open', state = 'disabled', command=lambda: None)
-            if self.textbox.status_list[index].cget('text') == 'Download Cancelled!':
-                os.remove(fileloc)
-            else:
-                is_shit_there(self, download_path, index, fileloc, console, sha1, size)
+                                    now = time.monotonic()
+                                    if now - last_ui_update > 0.01:
+                                        last_ui_update = now
+                                        val = i
+                                        self.after(0, lambda v = val: try_set(prog_bar, v))
+                                        try_configure(status, text_color = 'green', text= f"{h:.2f}/{size_mb}MB")
+                                if q.empty() == False: break
+                            else: break
+
+                #After the file is downloaded, reconfigure the dl and open button behavior.
+                #Then remove the file if the dl was cancelled. If it completed, run is_shit_there to check the hash and configure buttons properly.
+                try_configure(dl_button, command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
+                try_configure(open_button, text='Open', state = 'disabled', command=lambda: None)
+                if status.cget('text') == 'Download Cancelled!':
+                    os.remove(fileloc)
+                else:
+                    self.is_shit_there(download_path, index, fileloc, console, sha1, size)
+        else: pass
 
     #Downloads all files, or only new files based on the check box in the downall window. Pretty sure it belongs in the DownloadAllWindow class.
     def downall(self):
+        only_new = self.toplevel_window.only_new_check.get()
         self.toplevel_window.destroy()
-        if self.toplevel_window.only_new_check.get() == 0:
-            for item in self.textbox.dlbutton_list:
+        for item in self.textbox.dlbutton_list:
+            text = item.cget('text')
+            if only_new == 0 and text in ('Download'):
                 item.invoke()
-        else:
-            for item in self.textbox.dlbutton_list:
-                if item.cget('text') == 'Download':
-                    item.invoke()
+            elif only_new == 1 and text in ('Download', 'Redownload'):
+                item.invoke()
 
     #If you want to clear the frame on each search, the search button will destroy it and recreate it, then search.
     #Otherwise it will clear error labels such as 'Invalid ID' before appending the list.
@@ -814,9 +843,7 @@ class App(customtkinter.CTk):
 
     #Behavior for the Download button.
     def frame_button_download(self, game_name, title_id, url, console, update_size, sha1, index, download_path, fileloc):
-        semaphore = threading.Semaphore(2)
-        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, semaphore), daemon = True).start()
-        time.sleep(.001)
+        threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, self.download_semaphore), daemon = True).start()
 
     #Behavior for the Download All button. Opens the download all window.
     def button_downall(self):
