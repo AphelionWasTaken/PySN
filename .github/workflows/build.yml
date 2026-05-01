@@ -103,10 +103,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.5.2
-          release_name: v2.5.2
+          tag_name: v2.5.3
+          release_name: v2.5.3
           body: |
-            Fix an issue with the download all button where it was stopping at entries without widgets.
+            A little more cleanup.
           draft: false
           prerelease: false
 
