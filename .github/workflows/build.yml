@@ -140,10 +140,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.5.5
-          name: v2.5.5
+          tag_name: v2.5.6
+          name: v2.5.6
           body: |
-            Create Linux release.
+            Point to games.yml on MacOS.
           draft: false
           prerelease: false
           files: |
