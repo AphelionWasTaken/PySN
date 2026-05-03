@@ -143,7 +143,7 @@ jobs:
           tag_name: v2.5.5
           name: v2.5.5
           body: |
-            Test.
+            Create Linux release.
           draft: false
           prerelease: false
           files: |
