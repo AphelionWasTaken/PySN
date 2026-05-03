@@ -9,6 +9,7 @@ import queue
 import yaml
 import time
 import sys
+from tkinter import PhotoImage
 from pathlib import Path
 from fnmatch import fnmatch
 from configparser import ConfigParser
@@ -316,7 +317,7 @@ class App(customtkinter.CTk):
         if sys.platform == 'win32':
             self.iconbitmap(resource_path("AphIcon.ico"))
         elif sys.platform in ['linux', 'darwin']:
-            icon = tk.PhotoImage(file=resource_path("AphIcon.png"))
+            icon = PhotoImage(file=resource_path("AphIcon.png"))
             self.after(0, lambda: self.iconphoto(True, icon))
 
         self.entry = customtkinter.CTkEntry(master=self, placeholder_text='Enter Serial', width = 125)
