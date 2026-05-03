@@ -24,7 +24,11 @@ Just download PySN_MacOS.zip from [Releases](https://github.com/AphelionWasTaken
 
 Linux/BSD
 ------------------------
-This program uses Python 3. You must have [Python](https://www.python.org/downloads/) installed to run this program. It is included with most Linux Distros, although you may need to upgrade to a more recent version.
+Just download PySN_Linux.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest) and run the executable.
+
+Building PySN
+------------------------
+PySN does not need to be "built". Releases are created via PyInstaller. If you would rather run this directly from the source code, this program rquires Python 3. You must have [Python](https://www.python.org/downloads/) installed on your system. It is included with most Linux Distros, although you may need to upgrade to a more recent version.
 
 You will also need the Requests, CustomTkinter, BeautifulSoup, and PyYaml Python modules installed to run this program. To install these, open any terminal and type `pip install requests`, `pip install customtkinter`, `pip install beautifulsoup4`, and `pip install pyyaml`, respectively.
 
