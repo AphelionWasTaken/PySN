@@ -8,7 +8,7 @@ jobs:
   build_matrix:
     strategy:
       matrix:
-        os: [windows-latest, macos-15-intel, ubuntu-latest]
+        os: [windows-latest, macos-15-intel, ubuntu-latest, macos-latest]
     
     if: github.event.pull_request.merged == true
     runs-on: ${{ matrix.os }}
@@ -22,6 +22,12 @@ jobs:
           wget https://www.python.org/ftp/python/3.10.6/python-3.10.6-macos11.pkg
           sudo installer -verbose -pkg ./python-3.10.6-macos11.pkg -target /
           echo "/Library/Frameworks/Python.framework/Versions/3.10/bin" >> $GITHUB_PATH
+
+      - name: Install Python (macOS ARM)
+        if: ${{ matrix.os == 'macos-latest' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
       - name: Install Python (Windows)      
         if: ${{ matrix.os == 'windows-latest' }}
@@ -42,6 +48,11 @@ jobs:
         run: |
           pip3 install -r requirements.txt
 
+      - name: Install Requirements (MacOS ARM)
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          pip3 install -r requirements.txt
+
       - name: Install Requirements (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
@@ -54,6 +65,11 @@ jobs:
 
       - name: Run PyInstaller (MacOS)
         if: ${{ matrix.os == 'macos-15-intel' }}
+        run: |
+          pyinstaller PySN.py -w --onefile --add-data "Icons/AphIcon.png:." --icon="Icons/AphIcon.icns"
+
+      - name: Run PyInstaller (MacOS ARM)
+        if: ${{ matrix.os == 'macos-latest' }}
         run: |
           pyinstaller PySN.py -w --onefile --add-data "Icons/AphIcon.png:." --icon="Icons/AphIcon.icns"
 
@@ -73,6 +89,13 @@ jobs:
           mkdir macos
           cp dist/PySN macos
           (cd macos/ && zip -r -X ../PySN_MacOS.zip .)
+
+      - name: Move and Zip (MacOS ARM)
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          mkdir macos_ARM
+          cp dist/PySN macos_ARM
+          (cd macos_ARM/ && zip -r -X ../PySN_MacOS_ARM.zip .)
 
       - name: Move and Zip (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
@@ -94,6 +117,13 @@ jobs:
         with:
           name: PySN_MacOS.zip
           path: PySN_MacOS.zip
+
+      - name: Upload Artifact (MacOS ARM)
+        if: ${{ matrix.os == 'macos-latest' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: PySN_MacOS_ARM.zip
+          path: PySN_MacOS_ARM.zip
 
       - name: Upload Artifact (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
@@ -125,6 +155,12 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
+          name: PySN_MacOS_ARM.zip
+          path: ./artifacts
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
           name: PySN_Windows.zip
           path: ./artifacts
 
@@ -140,15 +176,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.5.9
-          name: v2.5.9
+          tag_name: v2.5.10
+          name: v2.5.10
           body: |
-            Fix Linux/MacOS builds.
+            Add MacOS ARM Build.
 
-            I was trying to configure a widget before creating it. Not sure why this worked on Windows...
+            Hopefully fix yml parsing on Linux and MacOS.
           draft: false
           prerelease: false
           files: |
             ./artifacts/PySN_MacOS.zip
+            ./artifacts/PySN_MacOS_ARM.zip
             ./artifacts/PySN_Windows.zip
             ./artifacts/PySN_Linux.zip

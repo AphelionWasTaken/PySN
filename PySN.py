@@ -488,7 +488,7 @@ class App(customtkinter.CTk):
             console = 'PlayStation 3'
             if sys.platform.startswith('linux'):
                 yml_dir = Path.home() / '.config' / 'rpcs3' / 'games.yml'
-            if sys.platform.startswith('darwin'):
+            elif sys.platform.startswith('darwin'):
                 yml_dir = Path.home() / 'Library' / 'Application Support' / 'rpcs3' / 'games.yml'
             else: yml_dir = Path(rpcs3_dir) / 'config' / 'games.yml'
             if os.path.isfile(yml_dir):
