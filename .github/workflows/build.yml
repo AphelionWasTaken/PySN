@@ -55,7 +55,7 @@ jobs:
       - name: Run PyInstaller (MacOS)
         if: ${{ matrix.os == 'macos-15-intel' }}
         run: |
-          pyinstaller PySN.py -w --onefile --add-data "Icons:." --icon="Icons/AphIcon.icns"
+          pyinstaller PySN.py -w --onefile --add-data "Icons/AphIcon.png:." --icon="Icons/AphIcon.icns"
 
       - name: Run PyInstaller (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
