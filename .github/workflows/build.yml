@@ -140,10 +140,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.5.6
-          name: v2.5.6
+          tag_name: v2.5.7
+          name: v2.5.7
           body: |
-            Point to games.yml on MacOS.
+            Add window icons to MacOS and Linux.
           draft: false
           prerelease: false
           files: |
