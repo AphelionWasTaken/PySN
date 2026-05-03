@@ -308,7 +308,6 @@ class App(customtkinter.CTk):
         self.toplevel_window = None
         self.total_download_size = 0
         self.completed_download_size = 0
-        self.after(50, self.update_total_progress_ui)
         self._download_lock = threading.Lock()
         self.grid_rowconfigure((0, 2, 3), weight=0)
         self.grid_rowconfigure((1), weight=1)
@@ -340,7 +339,7 @@ class App(customtkinter.CTk):
         self.total_prog_bar = customtkinter.CTkProgressBar(self, height=5)
         self.total_prog_bar.set(0)
         self.total_prog_bar.grid(row=2, column=0, columnspan=5, pady=(15, 15), padx=(15, 15), sticky='ew')
-
+        self.after(50, self.update_total_progress_ui)
 
         self.button2 = customtkinter.CTkButton(master=self, command=self.button_downall, text='Download All', width = 125)
         self.button2.grid(row=3, column=0, padx=(4,2), pady=(0,6), sticky='ew')
