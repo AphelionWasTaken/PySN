@@ -26,18 +26,6 @@ Linux/BSD
 ------------------------
 Just download PySN_Linux.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest) and run the executable.
 
-Building PySN
-------------------------
-PySN does not need to be "built". Releases are created via PyInstaller. If you would rather run this directly from the source code, this program rquires Python 3. You must have [Python](https://www.python.org/downloads/) installed on your system. It is included with most Linux Distros, although you may need to upgrade to a more recent version.
-
-You will also need the Requests, CustomTkinter, BeautifulSoup, and PyYaml Python modules installed to run this program. To install these, open any terminal and type `pip install requests`, `pip install customtkinter`, `pip install beautifulsoup4`, and `pip install pyyaml`, respectively.
-
-If you have already cloned/downloaded this repo, you can easily install all of these modules by navigating to your PySN directory (where requirements.txt exists), and type `pip install -r requirements.txt`.
-
-Once you have the modules, clone this repo or just click on the green Code button and download the zip folder, then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`.
-
-Or run it however else you want, I don't care, I'm not a cop.
-
 Using PySN
 ============
 Once the program is open, just type a valid PS3, PS4, or PS Vita Title ID (e.g. BCUS98114) into the search bar, select the proper console from the dropdown menu, and then hit the "Enter" key or the "Search" button.
@@ -57,6 +45,20 @@ Title Updates are downloaded into an Updates folder within the directory contain
 You can change the update folder location in PySN's settings, but your updates will always be separated out by console and game.
 
 On MacOS and Linux the config.ini file is saved to your home directory. On Windows it is saved to the directory containing PySN.exe.
+
+Building PySN
+============
+PySN does not need to be "built". Releases are created via PyInstaller. If you would rather run this directly from the source code, this program requires [Python 3](https://www.python.org/downloads/). It is included with most Linux Distros, although you may need to upgrade to a more recent version.
+
+You will also need the Requests, CustomTkinter, BeautifulSoup, and PyYaml Python modules installed to run this program. To install these, open any terminal and type `pip install requests`, `pip install customtkinter`, `pip install beautifulsoup4`, and `pip install pyyaml`, respectively.
+
+If you have already cloned/downloaded this repo, you can easily install all of these modules by navigating to your PySN directory (where requirements.txt exists), and type `pip install -r requirements.txt`.
+
+Once you have the modules, clone this repo or just click on the green Code button and download the zip folder.
+
+Extract the files and <ins>move the icons from the Icons folder into the root of your PySN folder</ins> (next to PySN.py), then run PySN.py with Python. Or run it in a terminal by navigating to the directory containing PySN.py and typing `python PySN.py`.
+
+Or run it however else you want, I don't care, I'm not a cop.
 
 Screenshots
 ============

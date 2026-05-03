@@ -55,17 +55,17 @@ jobs:
       - name: Run PyInstaller (MacOS)
         if: ${{ matrix.os == 'macos-15-intel' }}
         run: |
-          pyinstaller PySN.py -w --onefile
+          pyinstaller PySN.py -w --onefile --add-data "Icons:." --icon="Icons/AphIcon.icns"
 
       - name: Run PyInstaller (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
         run: |
-          pyinstaller PySN.py -w --add-data "AphIcon.ico;." --icon="AphIcon.ico"
+          pyinstaller PySN.py -w --add-data "Icons/AphIcon.ico;." --icon="Icons/AphIcon.ico"
 
       - name: Run PyInstaller (Linux)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          pyinstaller PySN.py -w --onefile
+          pyinstaller PySN.py -w --onefile --add-data "Icons/AphIcon.png:."
 
       - name: Move and Zip (MacOS)
         if: ${{ matrix.os == 'macos-15-intel' }}

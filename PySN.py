@@ -315,6 +315,9 @@ class App(customtkinter.CTk):
         self.bind('<Return>', lambda event: self.button_search())
         if sys.platform == 'win32':
             self.iconbitmap(resource_path("AphIcon.ico"))
+        elif sys.platform in ['linux', 'darwin']:
+            icon = tk.PhotoImage(file=resource_path("AphIcon.png"))
+            self.after(0, lambda: self.iconphoto(True, icon))
 
         self.entry = customtkinter.CTkEntry(master=self, placeholder_text='Enter Serial', width = 125)
         self.entry.grid(row=0, column=0, padx=(4,2), pady=(6,0), sticky='ew')
