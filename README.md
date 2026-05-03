@@ -44,7 +44,9 @@ Once the program is open, just type a valid PS3, PS4, or PS Vita Title ID (e.g. 
 
 This program will then locate any Title Updates for that game, list them out, and ask you if you would like to download them.
 
-You can also point PySN to your RPCS3 installation via the settings. If you do so, you can then check the "Search Games.yml" box and hit "Search" to find updates for all of the games you have in RPCS3 at once.
+You can also have PySN scan your RPCS3 games.yml to find updates for all of your installed games at once. On Linux and MacOS, all you need to do is check the "Search Games.yml" checkbox and hit the search button.
+
+On Windows you will need to point PySN to your RPCS3 installation via the settings first.
 
 If you want to download firmware, just type in "fw" or "firmware" and hit enter or click the search button.
 
