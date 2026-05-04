@@ -42,12 +42,24 @@ class ConfigSettings():
         else:
             app_path = os.path.dirname(os.path.abspath(__file__))
         normalized_path = app_path.replace('\\','/')
-        return normalized_path
+
+        if sys.platform.startswith('darwin'):
+            config_dir = Path.home() / 'Library' / 'Application Support' / 'PySN'
+            config_dir.mkdir(parents=True, exist_ok=True)
+            return normalized_path, str(config_dir)
+        elif sys.platform.startswith('linux'):
+            config_dir = Path.home() / '.config' / 'PySN'
+            config_dir.mkdir(parents=True, exist_ok=True)
+            return normalized_path, str(config_dir)
+        else:
+            return normalized_path, normalized_path
 
     #Gets settings from the config file.
     def get_config():
         config = ConfigParser()
-        config.read('config.ini')
+        normalized_path, config_dir = ConfigSettings.get_path()
+        config_path = os.path.join(config_dir, 'config.ini')
+        config.read(config_path)
         save_dir = config.get('paths', 'downloads')
         rpcs3_dir = config.get('paths', 'RPCS3')
         return save_dir, rpcs3_dir
@@ -55,16 +67,19 @@ class ConfigSettings():
     #Saves the config file.
     def save_config(mode, save_dir , rpcs3_dir):
         config = ConfigParser()
-        with open('config.ini', mode) as ini:
+        normalized_path, config_dir = ConfigSettings.get_path()
+        config_path = os.path.join(config_dir, 'config.ini')
+        with open(config_path, mode) as ini:
             config.add_section('paths')
-            config.set('paths', 'downloads', save_dir)
-            config.set('paths', 'RPCS3', rpcs3_dir)
+            config.set('paths', 'downloads', str(save_dir))
+            config.set('paths', 'RPCS3', str(rpcs3_dir))
             config.write(ini)
 
     #Checks for the config file, and gets the settings from it. Saves default config if none present.
     def check_config():
-        normalized_path = ConfigSettings.get_path()
-        if os.path.exists('config.ini'):
+        normalized_path, config_dir = ConfigSettings.get_path()
+        config_path = os.path.join(config_dir, 'config.ini')
+        if os.path.exists(config_path):
             save_dir, rpcs3_dir = ConfigSettings.get_config()
         else:
             save_dir = (normalized_path + '/Updates/')

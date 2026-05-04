@@ -66,12 +66,12 @@ jobs:
       - name: Run PyInstaller (MacOS)
         if: ${{ matrix.os == 'macos-15-intel' }}
         run: |
-          pyinstaller PySN.py -w --onefile --add-data "Icons/AphIcon.png:." --icon="Icons/AphIcon.icns"
+          pyinstaller PySN.py --windowed --add-data "Icons/AphIcon.png:." --icon="Icons/AphIcon.icns"
 
       - name: Run PyInstaller (MacOS ARM)
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
-          pyinstaller PySN.py -w --onefile --add-data "Icons/AphIcon.png:." --icon="Icons/AphIcon.icns"
+          pyinstaller PySN.py --windowed --add-data "Icons/AphIcon.png:." --icon="Icons/AphIcon.icns"
 
       - name: Run PyInstaller (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
@@ -87,14 +87,14 @@ jobs:
         if: ${{ matrix.os == 'macos-15-intel' }}
         run: |
           mkdir macos
-          cp dist/PySN macos
+          cp -r dist/PySN.app macos
           (cd macos/ && zip -r -X ../PySN_MacOS.zip .)
 
       - name: Move and Zip (MacOS ARM)
         if: ${{ matrix.os == 'macos-latest' }}
         run: |
           mkdir macos_ARM
-          cp dist/PySN macos_ARM
+          cp -r dist/PySN.app macos_ARM
           (cd macos_ARM/ && zip -r -X ../PySN_MacOS_ARM.zip .)
 
       - name: Move and Zip (Windows)
@@ -176,12 +176,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.5.10
-          name: v2.5.10
+          tag_name: v2.6.0
+          name: v2.6.0
           body: |
-            Add MacOS ARM Build.
-
-            Hopefully fix yml parsing on Linux and MacOS.
+            Create app builds for MacOS.
+            
+            Also put configs where they belong on MacOS and Linux.
           draft: false
           prerelease: false
           files: |

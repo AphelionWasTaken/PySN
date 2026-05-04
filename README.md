@@ -44,7 +44,7 @@ Title Updates are downloaded into an Updates folder within the directory contain
 
 You can change the update folder location in PySN's settings, but your updates will always be separated out by console and game.
 
-On MacOS and Linux the config.ini file is saved to your home directory. On Windows it is saved to the directory containing PySN.exe.
+On Windows the config file is saved to the directory containing PySN.exe. On MacOS it is in Home/Library/Application Support/PySN. On Linux is is in Home/.config/PySN
 
 Building PySN
 ============
