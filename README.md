@@ -74,5 +74,7 @@ Screenshots
 Contributors
 ============
 - [Aphelion](https://github.com/AphelionWasTaken)
-- [GalCiv](https://github.com/RipleyTom) - Thread handling/scheduling
-- [Darkhost](https://github.com/Darkhost1999) - Testing/Bug reporting
+- [GalCiv](https://github.com/RipleyTom) - Thread handling/scheduling for downloads
+- [Darkhost](https://github.com/Darkhost1999) - Testing/bug reporting
+- [schm1dtmac](https://github.com/schm1dtmac) - Icns file and MacOS arm64 testing
+- [FlexBy420](https://github.com/flexby420) - PlayStation 5 firmware searches
