@@ -176,10 +176,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.6.2
-          name: v2.6.2
+          tag_name: v2.6.3
+          name: v2.6.3
           body: |
-            Try to fix icon on MacOS again.
+            Store updates in the correct place on MacOS.
+
+            These were getting shoved into the app's Contents/MacOS folder. Now they should be next to the app.
           draft: false
           prerelease: false
           files: |
