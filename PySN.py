@@ -65,10 +65,11 @@ class ConfigSettings():
         config.read(config_path)
         save_dir = config.get('paths', 'downloads')
         rpcs3_dir = config.get('paths', 'RPCS3')
-        return save_dir, rpcs3_dir
+        folder_format = config.get('formats', 'folder_format', fallback='id_name')
+        return save_dir, rpcs3_dir, folder_format
 
     #Saves the config file.
-    def save_config(mode, save_dir , rpcs3_dir):
+    def save_config(mode, save_dir , rpcs3_dir, folder_format='id_name'):
         config = ConfigParser()
         normalized_path, config_dir = ConfigSettings.get_path()
         config_path = os.path.join(config_dir, 'config.ini')
@@ -76,6 +77,8 @@ class ConfigSettings():
             config.add_section('paths')
             config.set('paths', 'downloads', str(save_dir))
             config.set('paths', 'RPCS3', str(rpcs3_dir))
+            config.add_section('formats')
+            config.set('formats', 'folder_format', folder_format)
             config.write(ini)
 
     #Checks for the config file, and gets the settings from it. Saves default config if none present.
@@ -83,14 +86,15 @@ class ConfigSettings():
         normalized_path, config_dir = ConfigSettings.get_path()
         config_path = os.path.join(config_dir, 'config.ini')
         if os.path.exists(config_path):
-            save_dir, rpcs3_dir = ConfigSettings.get_config()
+            save_dir, rpcs3_dir, folder_format = ConfigSettings.get_config()
         else:
             save_dir = (normalized_path + '/Updates/')
             rpcs3_dir = 'No Games.yml Location Set!'
-            ConfigSettings.save_config('x', save_dir , rpcs3_dir)
-        return save_dir, rpcs3_dir
+            folder_format = 'id_name'
+            ConfigSettings.save_config('x', save_dir , rpcs3_dir, folder_format)
+        return save_dir, rpcs3_dir, folder_format
 
-save_dir, rpcs3_dir = ConfigSettings.check_config()
+save_dir, rpcs3_dir, folder_format = ConfigSettings.check_config()
 
 #Used to send messages to the queue
 class ButtonAction(Enum):
@@ -106,9 +110,9 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.geometry('540x320')
         self.resizable(0,0)
         self.title('Settings')
-        self.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
-        self.temp_save, self.temp_rpcs3 = ConfigSettings.check_config()
+        self.temp_save, self.temp_rpcs3, self.temp_folder_format = ConfigSettings.check_config()
         if sys.platform == 'win32':
             self.after(200, lambda: self.iconbitmap(resource_path("AphIcon.ico")))
 
@@ -124,14 +128,20 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.rpcs3_dir_label.grid(row=2, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
 
         self.yaml_dir_field = customtkinter.CTkTextbox(master=self, height=25, width = 400, wrap='none')
-        self.yaml_dir_field.grid(row=3, column=1, columnspan=3, padx=5, pady=(0,25), sticky='new')
+        self.yaml_dir_field.grid(row=3, column=1, columnspan=3, padx=5, pady=(0,0), sticky='new')
         self.edit_button2 = customtkinter.CTkButton(master=self, width = 50, text='Edit', command = self.button_yml_loc)
         self.edit_button2.grid(row=3, padx=5, pady=(0,0), column=4, sticky='new')
 
+        self.folder_format_label = customtkinter.CTkLabel(master=self, text='Folder Naming:', anchor='center')
+        self.folder_format_label.grid(row=4, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
+        self.folder_format_toggle = customtkinter.CTkSegmentedButton(master=self, values=['ID - Name', 'Name - ID'])
+        self.folder_format_toggle.grid(row=5, column=1, columnspan=4, padx=5, pady=(0,30), sticky='ew')
+        self.folder_format_toggle.set('ID - Name' if folder_format == 'id_name' else 'Name - ID')
+
         self.save_button = customtkinter.CTkButton(master=self, text='Save', width = 100, command = self.button_save)
-        self.save_button.grid(row=4, padx=(0,5), column=2, sticky='e')
+        self.save_button.grid(row=6, padx=(0,5), column=2, sticky='e')
         self.cancel_button = customtkinter.CTkButton(master=self, text='Cancel', width = 100, command=self.destroy)
-        self.cancel_button.grid(row=4, padx=(5,135), column=3, columnspan=2, sticky='w')
+        self.cancel_button.grid(row=6, padx=(5,135), column=3, columnspan=2, sticky='w')
 
         self.save_dir_field.insert('0.0',self.temp_save)
         self.save_dir_field.configure(state='disabled')
@@ -165,6 +175,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
     def button_save(self):
         global rpcs3_dir
         global save_dir
+        global folder_format
         if self.temp_save.endswith('/'):
             save_dir = self.temp_save
         else: 
@@ -173,7 +184,8 @@ class SettingsWindow(customtkinter.CTkToplevel):
             rpcs3_dir = self.temp_rpcs3
         else:
             rpcs3_dir = self.temp_rpcs3 + '/'
-        ConfigSettings.save_config('w', save_dir , rpcs3_dir)
+        folder_format = 'id_name' if self.folder_format_toggle.get() == 'ID - Name' else 'name_id'
+        ConfigSettings.save_config('w', save_dir , rpcs3_dir, folder_format)
         self.destroy()
 
 #Download All window. I did not create the downall function as part of this class for whatever reason...
@@ -323,6 +335,8 @@ class App(customtkinter.CTk):
         self.geometry('760x640')
         self.title('PySN')
         self.resizable(0,1)
+        self.minsize(760, 0)
+        self.maxsize(760, 99999)
         self.toplevel_window = None
         self.total_download_size = 0
         self.completed_download_size = 0
@@ -449,9 +463,26 @@ class App(customtkinter.CTk):
         self.after(50, self.update_total_progress_ui)
 
     #Checks if the download path already exists and if hashes match. Changes the buttons and status label accordingly.
-    def is_shit_there(self, download_path, index, fileloc, console, sha1, expected_size=None):
+    def is_shit_there(self, name, title_id, download_path, index, fileloc, console, sha1, expected_size=None):
         if not path.exists(fileloc):
-            return 0
+            if title_id and name:
+                if folder_format == 'id_name':
+                    alt_download_path = save_dir + console + '/' + name + ' [' + title_id + ']'
+                else:
+                    alt_download_path = save_dir + console + '/[' + title_id + '] ' + name
+                alt_fileloc = alt_download_path + '/' + path.basename(fileloc)
+                legacy_path = save_dir + console + '/' + title_id + ' ' + name
+                legacy_fileloc = legacy_path + '/' + path.basename(fileloc)
+                if path.exists(alt_fileloc):
+                    download_path = alt_download_path
+                    fileloc = alt_fileloc
+                elif path.exists(legacy_fileloc):
+                    download_path = legacy_path
+                    fileloc = legacy_fileloc
+                else:
+                    return 0
+            else:
+                return 0
 
         self.textbox.status_list[index].configure(text_color='yellow',text='Checking Hash...')
         self.textbox.dlbutton_list[index].configure(text='Redownload', state='disabled')
@@ -622,12 +653,15 @@ class App(customtkinter.CTk):
 
                 #Assign a download path with some handling for odd characters in the game name. Add Widgets to the textbox and check if the file already exists.
                 name = game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip()
-                download_path = save_dir + console + '/' + title_id + ' ' + name
+                if folder_format == 'id_name':
+                    download_path = save_dir + console + '/[' + title_id + '] ' + name
+                else:
+                    download_path = save_dir + console + '/' + name + ' [' + title_id + ']'
                 update_file = path.basename(url)
                 fileloc = (download_path + '/' + update_file)
-                self.after(0, lambda gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
+                self.after(0, lambda gn=name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
                           (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
-                           self.is_shit_there(dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                           self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
 
         elif game_name == 'Invalid ID':
             self.after(0, lambda: self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', ''))
@@ -667,12 +701,15 @@ class App(customtkinter.CTk):
                     update_size_list.append(int((item.get('size'))))
                     name_list.append(game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip())       
                 for version in package_list:
-                    download_path = (save_dir + console + '/' + title_id + ' ' + name_list[i])
+                    if folder_format == 'id_name':
+                        download_path = (save_dir + console + '/[' + title_id + '] ' + name_list[i])
+                    else:
+                        download_path = (save_dir + console + '/' + name_list[i] + ' [' + title_id + ']')
                     update_file = 'DRM-Free ' + path.basename(url_list[i])
                     fileloc = (download_path + '/' + update_file)
                     self.after(0, lambda gn=name_list[i], tid=title_id, v=version, u=url_list[i], c=console, us=update_size_list[i], s=sha1_list[i], dp=download_path, fl=fileloc:
                               (self.textbox.add_item(gn, tid, ' v' + v + ' DRM-Free', u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
-                               self.is_shit_there(dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                               self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
                     i = i+1
             else: pass
         else: pass
@@ -713,7 +750,7 @@ class App(customtkinter.CTk):
 
                 self.after(0, lambda gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
                            (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
-                            self.is_shit_there(dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                            self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
 
         else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', ''))
 
@@ -792,7 +829,7 @@ class App(customtkinter.CTk):
                 
                 self.after(0, lambda gn=game_name, tid=title_id, v=ver_list[i], u=url, c=console, us=update_size_list[i], s=sha1, dp=download_path, fl=fileloc:
                            (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
-                            self.is_shit_there(dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                            self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
                 i = i+1
         else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', ''))
 
@@ -894,7 +931,7 @@ class App(customtkinter.CTk):
                 if status.cget('text') == 'Download Cancelled!':
                     os.remove(fileloc)
                 else:
-                    self.is_shit_there(download_path, index, fileloc, console, sha1, size)
+                    self.is_shit_there(name, title_id, download_path, index, fileloc, console, sha1, size)
         else: pass
 
     #Downloads all files, or only new files based on the check box in the downall window. Pretty sure it belongs in the DownloadAllWindow class.

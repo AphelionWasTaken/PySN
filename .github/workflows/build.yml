@@ -176,12 +176,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.6.3
-          name: v2.6.3
+          tag_name: v2.7.0
+          name: v2.7.0
           body: |
-            Store updates in the correct place on MacOS.
+            Allow users to change the folder naming structure from ID - Name to Name - ID in the settings.
 
-            These were getting shoved into the app's Contents/MacOS folder. Now they should be next to the app.
+            Include brackets around the ID in the folder name.
+
+            Set the min and max size for the main window so that it cannot be expanded horizontally on Linux and MacOS.
           draft: false
           prerelease: false
           files: |

@@ -22,8 +22,6 @@ MacOS
 ------------------------
 Just download PySN_MacOS.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest) and run the executable.
 
-It is recommended that you move the extracted PySN app to a new folder/location. Otherwise downloads will be sent to the AppTranslocation folder by default. You can also change the download location in the settings.
-
 Linux/BSD
 ------------------------
 Just download PySN_Linux.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest) and run the executable.
@@ -42,9 +40,9 @@ If you want to download firmware, just type in "fw" or "firmware" and hit enter 
 
 File Locations
 ------------------------
-Title Updates are downloaded into an Updates folder within the directory containing PySN by default, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/BCUS98114 Gran Turismo 5`).
+Title Updates are downloaded into an Updates folder within the directory containing PySN by default, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/[BCUS98114] Gran Turismo 5`).
 
-You can change the update folder location in PySN's settings, but your updates will always be separated out by console and game.
+You can change the update folder location in PySN's settings, as well as the folder naming structure if you prefer to have the game title before the game ID (for sorting alphabetically by title).
 
 On Windows the config file is saved to the directory containing PySN.exe. On MacOS it is in Home/Library/Application Support/PySN. On Linux is is in Home/.config/PySN
 
@@ -64,11 +62,13 @@ Or run it however else you want, I don't care, I'm not a cop.
 
 Screenshots
 ============
-| | |
-|:---:|:---:|
-| <img height = 337 width = 400 src="https://github.com/user-attachments/assets/abe6727c-f83b-4eb8-894b-fdd0203bd064"> | <img height = 337 width = 400 src="https://github.com/user-attachments/assets/c956cfef-1644-4a43-accf-2f5fc9503fa3"> |
-| <img height = 281.5 width = 400 src="https://github.com/user-attachments/assets/c4fc3cff-4594-4a49-bbb2-4d7e8b6940a1"> | <img height = 281.5 width = 400 src="https://github.com/user-attachments/assets/dbca640a-f7e6-456a-b494-ca7cbc5f830a">
-
+<p align="center">
+    <img height = 337 width = 400 src="https://github.com/user-attachments/assets/abe6727c-f83b-4eb8-894b-fdd0203bd064" >
+    <img height = 337 width = 400  src="https://github.com/user-attachments/assets/c956cfef-1644-4a43-accf-2f5fc9503fa3" >
+    <p align="center">
+    <img height = 281.5 width = 400 src="https://github.com/user-attachments/assets/c4fc3cff-4594-4a49-bbb2-4d7e8b6940a1" >
+    <img  height = 281.5 width = 400 src="https://github.com/user-attachments/assets/dbca640a-f7e6-456a-b494-ca7cbc5f830a" >
+</p>
 
 
 Contributors
