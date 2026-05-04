@@ -38,7 +38,10 @@ class ConfigSettings():
 
     def get_path():
         if getattr(sys, 'frozen', False):
-            app_path = os.path.dirname(sys.executable)
+            if sys.platform.startswith('darwin'):
+                app_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(sys.executable))))
+            else:
+                app_path = os.path.dirname(sys.executable)
         else:
             app_path = os.path.dirname(os.path.abspath(__file__))
         normalized_path = app_path.replace('\\','/')
