@@ -176,12 +176,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.6.0
-          name: v2.6.0
+          tag_name: v2.6.1
+          name: v2.6.1
           body: |
-            Create app builds for MacOS.
-            
-            Also put configs where they belong on MacOS and Linux.
+            Fix icon on MacOS.
+
+            Low res icons were corrupt.
           draft: false
           prerelease: false
           files: |
