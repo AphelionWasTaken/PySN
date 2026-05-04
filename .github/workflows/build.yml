@@ -176,14 +176,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.7.0
-          name: v2.7.0
+          tag_name: v2.7.1
+          name: v2.7.1
           body: |
-            Allow users to change the folder naming structure from ID - Name to Name - ID in the settings.
-
-            Include brackets around the ID in the folder name.
-
-            Set the min and max size for the main window so that it cannot be expanded horizontally on Linux and MacOS.
+            Allow users to change the maximum number of simultaneous downloads (default 12, can be set between 1 and 100).
           draft: false
           prerelease: false
           files: |
