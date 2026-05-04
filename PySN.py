@@ -66,10 +66,11 @@ class ConfigSettings():
         save_dir = config.get('paths', 'downloads')
         rpcs3_dir = config.get('paths', 'RPCS3')
         folder_format = config.get('formats', 'folder_format', fallback='id_name')
-        return save_dir, rpcs3_dir, folder_format
+        max_downloads = config.getint('settings', 'max_downloads', fallback=12)
+        return save_dir, rpcs3_dir, folder_format, max_downloads
 
     #Saves the config file.
-    def save_config(mode, save_dir , rpcs3_dir, folder_format='id_name'):
+    def save_config(mode, save_dir , rpcs3_dir, folder_format='id_name', max_downloads=12):
         config = ConfigParser()
         normalized_path, config_dir = ConfigSettings.get_path()
         config_path = os.path.join(config_dir, 'config.ini')
@@ -79,6 +80,8 @@ class ConfigSettings():
             config.set('paths', 'RPCS3', str(rpcs3_dir))
             config.add_section('formats')
             config.set('formats', 'folder_format', folder_format)
+            config.add_section('settings')
+            config.set('settings', 'max_downloads', str(max_downloads))
             config.write(ini)
 
     #Checks for the config file, and gets the settings from it. Saves default config if none present.
@@ -86,15 +89,16 @@ class ConfigSettings():
         normalized_path, config_dir = ConfigSettings.get_path()
         config_path = os.path.join(config_dir, 'config.ini')
         if os.path.exists(config_path):
-            save_dir, rpcs3_dir, folder_format = ConfigSettings.get_config()
+            save_dir, rpcs3_dir, folder_format, max_downloads = ConfigSettings.get_config()
         else:
             save_dir = (normalized_path + '/Updates/')
             rpcs3_dir = 'No Games.yml Location Set!'
             folder_format = 'id_name'
-            ConfigSettings.save_config('x', save_dir , rpcs3_dir, folder_format)
-        return save_dir, rpcs3_dir, folder_format
+            max_downloads = 12
+            ConfigSettings.save_config('x', save_dir , rpcs3_dir, folder_format, max_downloads)
+        return save_dir, rpcs3_dir, folder_format, max_downloads
 
-save_dir, rpcs3_dir, folder_format = ConfigSettings.check_config()
+save_dir, rpcs3_dir, folder_format, max_downloads = ConfigSettings.check_config()
 
 #Used to send messages to the queue
 class ButtonAction(Enum):
@@ -107,12 +111,12 @@ class SettingsWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.attributes('-topmost', 1)
-        self.geometry('540x320')
+        self.geometry('540x480')
         self.resizable(0,0)
         self.title('Settings')
-        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
-        self.temp_save, self.temp_rpcs3, self.temp_folder_format = ConfigSettings.check_config()
+        self.temp_save, self.temp_rpcs3, self.temp_folder_format, self.temp_max_downloads = ConfigSettings.check_config()
         if sys.platform == 'win32':
             self.after(200, lambda: self.iconbitmap(resource_path("AphIcon.ico")))
 
@@ -135,13 +139,20 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.folder_format_label = customtkinter.CTkLabel(master=self, text='Folder Naming:', anchor='center')
         self.folder_format_label.grid(row=4, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
         self.folder_format_toggle = customtkinter.CTkSegmentedButton(master=self, values=['ID - Name', 'Name - ID'])
-        self.folder_format_toggle.grid(row=5, column=1, columnspan=4, padx=5, pady=(0,30), sticky='ew')
+        self.folder_format_toggle.grid(row=5, column=1, columnspan=4, padx=5, pady=(0,0), sticky='new')
         self.folder_format_toggle.set('ID - Name' if folder_format == 'id_name' else 'Name - ID')
 
+        self.max_downloads_label = customtkinter.CTkLabel(master=self, text='Maximum Simultaneous Downloads (1-100):', anchor='center')
+        self.max_downloads_label.grid(row=6, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
+        char_limit = (self.register(self.validate_limit), '%P')
+        self.max_downloads_entry = customtkinter.CTkEntry(master=self, width=25, justify='center', validate='key', validatecommand=char_limit)
+        self.max_downloads_entry.grid(row=7, column=1, columnspan=4, padx=(230,230), pady=(0,30), sticky='new')
+        self.max_downloads_entry.insert(0, str(max_downloads))
+
         self.save_button = customtkinter.CTkButton(master=self, text='Save', width = 100, command = self.button_save)
-        self.save_button.grid(row=6, padx=(0,5), column=2, sticky='e')
+        self.save_button.grid(row=8, padx=(0,5), column=2, sticky='e')
         self.cancel_button = customtkinter.CTkButton(master=self, text='Cancel', width = 100, command=self.destroy)
-        self.cancel_button.grid(row=6, padx=(5,135), column=3, columnspan=2, sticky='w')
+        self.cancel_button.grid(row=8, padx=(5,135), column=3, columnspan=2, sticky='w')
 
         self.save_dir_field.insert('0.0',self.temp_save)
         self.save_dir_field.configure(state='disabled')
@@ -176,6 +187,18 @@ class SettingsWindow(customtkinter.CTkToplevel):
         global rpcs3_dir
         global save_dir
         global folder_format
+        global max_downloads
+        
+        dl_entry = int(self.max_downloads_entry.get() or 12)
+        if dl_entry < 1:
+            dl_entry = 1
+        elif dl_entry > 100:
+            dl_entry = 100
+        max_downloads = dl_entry
+        
+        app = self.master
+        app.download_semaphore = threading.Semaphore(max_downloads)
+
         if self.temp_save.endswith('/'):
             save_dir = self.temp_save
         else: 
@@ -185,8 +208,13 @@ class SettingsWindow(customtkinter.CTkToplevel):
         else:
             rpcs3_dir = self.temp_rpcs3 + '/'
         folder_format = 'id_name' if self.folder_format_toggle.get() == 'ID - Name' else 'name_id'
-        ConfigSettings.save_config('w', save_dir , rpcs3_dir, folder_format)
+        ConfigSettings.save_config('w', save_dir , rpcs3_dir, folder_format, max_downloads)
         self.destroy()
+
+    def validate_limit(self, text):
+        if len(text) <= 3:
+            return True
+        return False
 
 #Download All window. I did not create the downall function as part of this class for whatever reason...
 class DownloadAllWindow(customtkinter.CTkToplevel):
@@ -327,7 +355,7 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.hash_executor = ThreadPoolExecutor(max_workers=4)
-        self.download_semaphore = threading.Semaphore(12)
+        self.download_semaphore = threading.Semaphore(max_downloads)
         self._search_thread = None
         self.session = requests.Session()
         self.running = True
