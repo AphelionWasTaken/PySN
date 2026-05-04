@@ -176,12 +176,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.6.1
-          name: v2.6.1
+          tag_name: v2.6.2
+          name: v2.6.2
           body: |
-            Fix icon on MacOS.
-
-            Low res icons were corrupt.
+            Try to fix icon on MacOS again.
           draft: false
           prerelease: false
           files: |
