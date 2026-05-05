@@ -46,7 +46,7 @@ Title Updates are downloaded into an Updates folder within the directory contain
 
 You can change the update folder location in PySN's settings, as well as the folder naming structure if you prefer to have the game title before the game ID (for sorting alphabetically by title).
 
-On Windows the config file is saved to the directory containing PySN.exe. On MacOS it is in Home/Library/Application Support/PySN. On Linux is is in Home/.config/PySN
+On Windows the config file is saved to the directory containing PySN.exe. On MacOS it is in Home/Library/Application Support/PySN. On Linux it is in Home/.config/PySN
 
 Building PySN
 ============
