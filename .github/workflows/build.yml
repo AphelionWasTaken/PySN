@@ -176,10 +176,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.7.1
-          name: v2.7.1
+          tag_name: v2.7.2
+          name: v2.7.2
           body: |
-            Allow users to change the maximum number of simultaneous downloads (default 12, can be set between 1 and 100).
+            Fix an issue where cancelling items wouldn't clear them from the total downloads and would require a new search to redownload.
+
+            Also clean up more of the codebase to make it more readable.
           draft: false
           prerelease: false
           files: |
