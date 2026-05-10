@@ -9,16 +9,17 @@ import queue
 import yaml
 import time
 import sys
+import xml.etree.ElementTree as ET
 from tkinter import PhotoImage
 from pathlib import Path
 from fnmatch import fnmatch
 from configparser import ConfigParser
-import xml.etree.ElementTree as ET
 from os import makedirs, path
 from enum import Enum
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 
+#Urls are http rather than https, so we have to disable the warning about unsecure requests.
 requests.packages.urllib3.disable_warnings()
 
 #Creates a directory for the game in the download path.
@@ -116,9 +117,12 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.title('Settings')
         self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
-        self.temp_save, self.temp_rpcs3, self.temp_folder_format, self.temp_max_downloads = ConfigSettings.check_config()
         if sys.platform == 'win32':
             self.after(200, lambda: self.iconbitmap(resource_path("AphIcon.ico")))
+
+        self.temp_save, self.temp_rpcs3, self.temp_folder_format, self.temp_max_downloads = ConfigSettings.check_config()
+        self.char_limit = (self.register(self.validate_limit), '%P')
+
 
         self.save_dir_label = customtkinter.CTkLabel(master=self, text='Download Update PKGs To This Folder:', justify = 'center', anchor='center')
         self.save_dir_label.grid(row=0, column=1, columnspan=4, padx=5, pady=(20,0), sticky='sew')
@@ -144,8 +148,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
 
         self.max_downloads_label = customtkinter.CTkLabel(master=self, text='Maximum Simultaneous Downloads (1-100):', anchor='center')
         self.max_downloads_label.grid(row=6, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
-        char_limit = (self.register(self.validate_limit), '%P')
-        self.max_downloads_entry = customtkinter.CTkEntry(master=self, width=25, justify='center', validate='key', validatecommand=char_limit)
+        self.max_downloads_entry = customtkinter.CTkEntry(master=self, width=25, justify='center', validate='key', validatecommand=self.char_limit)
         self.max_downloads_entry.grid(row=7, column=1, columnspan=4, padx=(230,230), pady=(0,30), sticky='new')
         self.max_downloads_entry.insert(0, str(max_downloads))
 
@@ -203,11 +206,17 @@ class SettingsWindow(customtkinter.CTkToplevel):
             save_dir = self.temp_save
         else: 
             save_dir = self.temp_save + '/'
+        
         if self.temp_rpcs3.endswith('!') or self.temp_rpcs3.endswith('/'):
             rpcs3_dir = self.temp_rpcs3
         else:
             rpcs3_dir = self.temp_rpcs3 + '/'
-        folder_format = 'id_name' if self.folder_format_toggle.get() == 'ID - Name' else 'name_id'
+        
+        if self.folder_format_toggle.get() == 'ID - Name':
+            folder_format = 'id_name'
+        else:
+            folder_format = 'name_id'
+        
         ConfigSettings.save_config('w', save_dir , rpcs3_dir, folder_format, max_downloads)
         self.destroy()
 
@@ -354,10 +363,6 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-        self.hash_executor = ThreadPoolExecutor(max_workers=4)
-        self.download_semaphore = threading.Semaphore(max_downloads)
-        self._search_thread = None
-        self.session = requests.Session()
         self.running = True
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.geometry('760x640')
@@ -366,9 +371,6 @@ class App(customtkinter.CTk):
         self.minsize(760, 0)
         self.maxsize(760, 99999)
         self.toplevel_window = None
-        self.total_download_size = 0
-        self.completed_download_size = 0
-        self._download_lock = threading.Lock()
         self.grid_rowconfigure((0, 2, 3), weight=0)
         self.grid_rowconfigure((1), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
@@ -378,6 +380,14 @@ class App(customtkinter.CTk):
         elif sys.platform in ['linux', 'darwin']:
             icon = PhotoImage(file=resource_path("AphIcon.png"))
             self.after(0, lambda: self.iconphoto(True, icon))
+
+        self.hash_executor = ThreadPoolExecutor(max_workers=4)
+        self.download_semaphore = threading.Semaphore(max_downloads)
+        self._search_thread = None
+        self.session = requests.Session()
+        self.total_download_size = 0
+        self.completed_download_size = 0
+        self._download_lock = threading.Lock()
 
         self.entry = customtkinter.CTkEntry(master=self, placeholder_text='Enter Serial', width = 125)
         self.entry.grid(row=0, column=0, padx=(4,2), pady=(6,0), sticky='ew')
@@ -450,6 +460,7 @@ class App(customtkinter.CTk):
                 else:
                     for chunk in iter(lambda: f.read(4 * 1024 * 1024), b''):
                         hash_obj.update(chunk)
+            
             match = (sha1.upper() == hash_obj.hexdigest().upper())
 
         except Exception:
@@ -484,9 +495,7 @@ class App(customtkinter.CTk):
         completed_mb = completed_bytes / 1024000
 
         self.total_prog_bar.set(progress)
-        self.prog_status_label.configure(
-            text=f"{completed_mb:.2f}/{total_mb:.2f}MB"
-        )
+        self.prog_status_label.configure(text=f"{completed_mb:.2f}/{total_mb:.2f}MB")
 
         self.after(50, self.update_total_progress_ui)
 
@@ -501,6 +510,7 @@ class App(customtkinter.CTk):
                 alt_fileloc = alt_download_path + '/' + path.basename(fileloc)
                 legacy_path = save_dir + console + '/' + title_id + ' ' + name
                 legacy_fileloc = legacy_path + '/' + path.basename(fileloc)
+                
                 if path.exists(alt_fileloc):
                     download_path = alt_download_path
                     fileloc = alt_fileloc
@@ -568,6 +578,7 @@ class App(customtkinter.CTk):
             elif sys.platform.startswith('darwin'):
                 yml_dir = Path.home() / 'Library' / 'Application Support' / 'rpcs3' / 'games.yml'
             else: yml_dir = Path(rpcs3_dir) / 'config' / 'games.yml'
+            
             if os.path.isfile(yml_dir):
                 with open(yml_dir, 'r') as f:
                     file = yaml.safe_load(f)
@@ -639,6 +650,7 @@ class App(customtkinter.CTk):
                 info_url = 'http://f' + locale + '01.ps5.update.playstation.net/update/ps5/official/'+ obf + '/list/'+ locale + '/updatelist.xml'
             else:
                 info_url = 'https://f' + locale + '01.ps3.update.playstation.net/update/ps3/list/' + locale + '/ps3-updatelist.txt'
+            
             url_list.append(info_url)
 
         def fetch_locale(info_url):
@@ -685,8 +697,10 @@ class App(customtkinter.CTk):
                     download_path = save_dir + console + '/[' + title_id + '] ' + name
                 else:
                     download_path = save_dir + console + '/' + name + ' [' + title_id + ']'
+                
                 update_file = path.basename(url)
                 fileloc = (download_path + '/' + update_file)
+                
                 self.after(0, lambda gn=name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
                           (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
                            self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
@@ -733,8 +747,10 @@ class App(customtkinter.CTk):
                         download_path = (save_dir + console + '/[' + title_id + '] ' + name_list[i])
                     else:
                         download_path = (save_dir + console + '/' + name_list[i] + ' [' + title_id + ']')
+                    
                     update_file = 'DRM-Free ' + path.basename(url_list[i])
                     fileloc = (download_path + '/' + update_file)
+                    
                     self.after(0, lambda gn=name_list[i], tid=title_id, v=version, u=url_list[i], c=console, us=update_size_list[i], s=sha1_list[i], dp=download_path, fl=fileloc:
                               (self.textbox.add_item(gn, tid, ' v' + v + ' DRM-Free', u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
                                self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
@@ -767,7 +783,6 @@ class App(customtkinter.CTk):
                         update_url = self.session.get(url, stream=True, verify=False, timeout=10)
                         update_size = int(update_url.headers.get('Content-Length', 0))
                         
-
                 #There's no hash available to check, so sha1 gets assigned N/A. Title ID becomes region for formatting. set paths and populate widgets.
                 sha1 = 'N/A'
                 title_id = region
@@ -858,7 +873,9 @@ class App(customtkinter.CTk):
                 self.after(0, lambda gn=game_name, tid=title_id, v=ver_list[i], u=url, c=console, us=update_size_list[i], s=sha1, dp=download_path, fl=fileloc:
                            (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
                             self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                
                 i = i+1
+        
         else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', ''))
 
     #Pauses and resumes download and sends pause message to the queue.
@@ -892,14 +909,19 @@ class App(customtkinter.CTk):
 
                 if path.exists(download_path) == False:
                     create_directories(download_path)
+                
                 try_configure(dl_button, text='Pause', command=lambda: self.toggle_pause(dl_button, q))
                 try_configure(open_button, text='Cancel', state = 'normal', command=lambda: self.cancel(dl_button, q))
+                try_configure(status, text_color='green', text='Downloading')
+
                 i=0
                 h=0
                 last_ui_update = 0
                 downloaded_bytes = 0
                 size_mb = f"{round(size / 1024000, 2)}"
                 cancelled = False
+                with self._download_lock:
+                    self.total_download_size = self.total_download_size + size
 
                 #send a request to the update files URL. Handle threads and download behavior based on the button state.
                 with self.session.get(url, stream=True, verify=False) as r:
@@ -917,14 +939,10 @@ class App(customtkinter.CTk):
                                     try_configure(status, text_color='green', text='Downloading')
                                 elif action == ButtonAction.STOP:
                                     try_configure(status, text_color = 'red', text='Download Cancelled!')
+                                    cancelled = True
                                     break
                             except queue.Empty:
                                 pass
-                            
-                            #Check if download gets cancelled
-                            if status.cget('text') == 'Download Cancelled!':
-                                cancelled = True
-                                break
 
                             #Download the file and update the progress bar and status label based on how much has downloaded.
                             if chunk:
@@ -932,16 +950,14 @@ class App(customtkinter.CTk):
                                 i = i + (1/(size/(len(chunk))))
                                 h = h + len(chunk) / 1024000
                                 downloaded_bytes = downloaded_bytes + len(chunk)
+                                now = time.monotonic()
                                 with self._download_lock:
                                     self.completed_download_size = self.completed_download_size + len(chunk)
-
-                                now = time.monotonic()
+                                
                                 if now - last_ui_update > 0.01:
                                     last_ui_update = now
                                     self.after(0, lambda v = i: try_set(prog_bar, v))
                                     try_configure(status, text_color = 'green', text= f"{h:.2f}/{size_mb}MB")
-
-                            if q.empty() == False: break
 
                         #After the download loop, check if the download was cancelled. If it was, remove the file and update the completed download size.
                         if cancelled:
@@ -951,11 +967,14 @@ class App(customtkinter.CTk):
                                 pass
                             with self._download_lock:
                                 self.completed_download_size = self.completed_download_size - downloaded_bytes
+                                self.total_download_size = self.total_download_size - size
+
 
                 #After the file is downloaded, reconfigure the dl and open button behavior.
                 #Then remove the file if the dl was cancelled. If it completed, run is_shit_there to check the hash and configure buttons properly.
                 try_configure(dl_button, command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
                 try_configure(open_button, text='Open', state = 'disabled', command=lambda: None)
+                
                 if status.cget('text') == 'Download Cancelled!':
                     os.remove(fileloc)
                 else:
@@ -1012,8 +1031,6 @@ class App(customtkinter.CTk):
         open_button = self.textbox.open_button_list[index]
         q = self.textbox.queue_list[index]
         
-        with self._download_lock:
-            self.total_download_size = self.total_download_size + update_size
         threading.Thread(target = self.download_updates, args=(url, download_path, update_size, sha1, index, title_id, game_name, console, fileloc, self.download_semaphore, prog_bar, status, dl_button, open_button, q), daemon = True).start()
 
     #Behavior for the Download All button. Opens the download all window.
