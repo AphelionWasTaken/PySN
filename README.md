@@ -48,6 +48,12 @@ You can change the update folder location in PySN's settings, as well as the fol
 
 On Windows the config file is saved to the directory containing PySN.exe. On MacOS it is in Home/Library/Application Support/PySN. On Linux it is in Home/.config/PySN
 
+Installing Updates in RPCS3
+------------------------
+To install your downloaded updates in RPCS3, open up RPCS3 and open the folder containing your downloaded updates for an individual game. Drag the PKG files into RPCS3 to start the installation process. You can select multiple PKG files at once, however you can not drag folders into RPCS3; only the actual PKG files.
+
+If you would like to install all of your updates downloaded from PySN at once, you can use [PyKG](https://github.com/AphelionWasTaken/PyKG) to extract all of your PKG files to dev_hdd0/game in your RPCS3 installation.
+
 Building PySN
 ============
 PySN does not need to be "built". Releases are created via PyInstaller. If you would rather run this directly from the source code, this program requires [Python 3](https://www.python.org/downloads/). It is included with most Linux Distros, although you may need to upgrade to a more recent version.
