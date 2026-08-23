@@ -9,6 +9,7 @@ import queue
 import yaml
 import time
 import sys
+import re
 import xml.etree.ElementTree as ET
 from tkinter import PhotoImage
 from pathlib import Path
@@ -100,6 +101,42 @@ class ConfigSettings():
         return save_dir, rpcs3_dir, folder_format, max_downloads
 
 save_dir, rpcs3_dir, folder_format, max_downloads = ConfigSettings.check_config()
+
+class ResizableSemaphore:
+    def __init__(self, capacity):
+        self._cond = threading.Condition()
+        self._capacity = capacity
+        self._in_use = 0
+
+    def acquire(self, timeout=None):
+        with self._cond:
+            if timeout is None:
+                while self._in_use >= self._capacity:
+                    self._cond.wait()
+            else:
+                if self._in_use >= self._capacity:
+                    got = self._cond.wait_for(lambda: self._in_use < self._capacity, timeout=timeout)
+                    if not got:
+                        return False
+            self._in_use += 1
+            return True
+
+    def release(self):
+        with self._cond:
+            self._in_use -= 1
+            self._cond.notify()
+
+    def resize(self, new_capacity):
+        with self._cond:
+            self._capacity = new_capacity
+            self._cond.notify_all()
+
+    def __enter__(self):
+        self.acquire()
+        return self
+
+    def __exit__(self, *args):
+        self.release()
 
 #Used to send messages to the queue
 class ButtonAction(Enum):
@@ -200,7 +237,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
         max_downloads = dl_entry
         
         app = self.master
-        app.download_semaphore = threading.Semaphore(max_downloads)
+        app.download_semaphore.resize(max_downloads)
 
         if self.temp_save.endswith('/'):
             save_dir = self.temp_save
@@ -272,7 +309,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
         self._parent_canvas.yview_scroll(int(-1*(delta)), "units")
 
     #Creates widgets within the frame, adds appropriate ones to the grid, then adds them to a list.
-    def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, fileloc):
+    def add_item(self, name, title_id, ver, url, console, update_size, sha1, index, download_path, fileloc, sanitized_name):
         downloadable = False
         try:
             #Truncates the name depending on it's length. Assigns the title id, version, and name to a label on the left side of the frame.
@@ -309,7 +346,7 @@ class ScrollableLabelButtonFrame(customtkinter.CTkScrollableFrame):
 
             #Configures the buttons to take a command with appropriate variables. Places all of the widgets on the grid.
             if self.command is not None:
-                    dlbutton.configure(command=lambda: self.command(name, title_id, url, console, update_size, sha1, index, download_path, fileloc))
+                    dlbutton.configure(command=lambda: self.command(sanitized_name, title_id, url, console, update_size, sha1, index, download_path, fileloc))
                     open_button.configure(command=lambda: self.command(download_path, index, fileloc))
             if not name.startswith('Invalid ID') and not name.startswith('No updates available for') and not name.startswith('PlayStation 5 title') and name != 'No updates found':
                 title_label.grid(row=len(self.title_label_list), column=0, pady=(0, 10), sticky='w')
@@ -382,7 +419,7 @@ class App(customtkinter.CTk):
             self.after(0, lambda: self.iconphoto(True, icon))
 
         self.hash_executor = ThreadPoolExecutor(max_workers=4)
-        self.download_semaphore = threading.Semaphore(max_downloads)
+        self.download_semaphore = ResizableSemaphore(max_downloads)
         self._search_thread = None
         self.session = requests.Session()
         self.total_download_size = 0
@@ -692,7 +729,9 @@ class App(customtkinter.CTk):
                     update_size = int((item.get('size')))
 
                 #Assign a download path with some handling for odd characters in the game name. Add Widgets to the textbox and check if the file already exists.
-                name = game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip()
+                name = re.sub(r'[^a-zA-Z0-9_\- \u3000-\u303F\u3040-\u30FF\u4E00-\u9FFF\uFF00-\uFFEF]', '', game_name).strip()
+                name = re.sub(r'[\s.]+$', '', name)
+
                 if folder_format == 'id_name':
                     download_path = save_dir + console + '/[' + title_id + '] ' + name
                 else:
@@ -701,14 +740,14 @@ class App(customtkinter.CTk):
                 update_file = path.basename(url)
                 fileloc = (download_path + '/' + update_file)
                 
-                self.after(0, lambda gn=name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
-                          (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
-                           self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                self.after(0, lambda n=name, gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
+                          (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
+                           self.is_shit_there(n, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
 
         elif game_name == 'Invalid ID':
-            self.after(0, lambda: self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', ''))
+            self.after(0, lambda: self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '', ''))
         else:
-            self.after(0, lambda gn=game_name, tid=title_id: self.textbox.add_item(gn + tid, '', '', '', '', 0, '', '', '', ''))
+            self.after(0, lambda gn=game_name, tid=title_id: self.textbox.add_item(gn + tid, '', '', '', '', 0, '', '', '', '', ''))
 
     #Searches specifically for PS3 DRM-free update info, and populates the widgets in the frame based on that info.
     def search_no_drm(self, title_id, console, root, game_name):
@@ -729,6 +768,7 @@ class App(customtkinter.CTk):
                 drmfree_list = []
                 sha1_list = []
                 update_size_list = []
+                game_name_list = []
                 name_list = []
                 url_list = []
 
@@ -741,7 +781,14 @@ class App(customtkinter.CTk):
                     url_list.append(item.get('url'))
                     sha1_list.append(item.get('sha1sum'))
                     update_size_list.append(int((item.get('size'))))
-                    name_list.append(game_name.replace(':', ' -').replace('/', ' ').replace('?', '').strip())       
+                    game_name_list.append(game_name)
+
+                name_list = game_name_list.copy()
+
+                for name in name_list:
+                    name = re.sub(r'[^a-zA-Z0-9_\- \u3000-\u303F\u3040-\u30FF\u4E00-\u9FFF\uFF00-\uFFEF]', '', name).strip()
+                    name = re.sub(r'[\s.]+$', '', name)
+
                 for version in package_list:
                     if folder_format == 'id_name':
                         download_path = (save_dir + console + '/[' + title_id + '] ' + name_list[i])
@@ -751,9 +798,9 @@ class App(customtkinter.CTk):
                     update_file = 'DRM-Free ' + path.basename(url_list[i])
                     fileloc = (download_path + '/' + update_file)
                     
-                    self.after(0, lambda gn=name_list[i], tid=title_id, v=version, u=url_list[i], c=console, us=update_size_list[i], s=sha1_list[i], dp=download_path, fl=fileloc:
-                              (self.textbox.add_item(gn, tid, ' v' + v + ' DRM-Free', u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
-                               self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                    self.after(0, lambda n=name_list[i], gn=game_name_list[i], tid=title_id, v=version, u=url_list[i], c=console, us=update_size_list[i], s=sha1_list[i], dp=download_path, fl=fileloc:
+                              (self.textbox.add_item(gn, tid, ' v' + v + ' DRM-Free', u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
+                               self.is_shit_there(n, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
                     i = i+1
             else: pass
         else: pass
@@ -761,7 +808,7 @@ class App(customtkinter.CTk):
     #Handles users searching for PS5 updates.
     def search_ps5_update(self, title_id):
         name = 'PlayStation 5 title updates are not supported yet.'
-        self.after(0, lambda: self.textbox.add_item(name, '', '', '', '', 0, '', '', '', ''))
+        self.after(0, lambda: self.textbox.add_item(name, '', '', '', '', 0, '', '', '', '', ''))
 
     #Searches for PS3 firmware info, and populates the widgets in the frame based on that info.
     def search_ps3_fw(self, console):
@@ -791,11 +838,11 @@ class App(customtkinter.CTk):
                 update_file = 'v' + ver + ' ' + path.basename(url)
                 fileloc = (download_path + '/' + update_file)
 
-                self.after(0, lambda gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
-                           (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
+                self.after(0, lambda n=game_name, gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
+                           (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
                             self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
 
-        else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', ''))
+        else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '', ''))
 
     #Searches for PS4 or Vita update info and populates the widgets in the frame based on that info.
     def search_ps4_ps5_vita_fw(self, console):
@@ -870,13 +917,13 @@ class App(customtkinter.CTk):
                 update_file = 'v' + ver_list[i] + ' ' + update_data_list[i] + ' ' + path.basename(url)
                 fileloc = (download_path + '/' + update_file)
                 
-                self.after(0, lambda gn=game_name, tid=title_id, v=ver_list[i], u=url, c=console, us=update_size_list[i], s=sha1, dp=download_path, fl=fileloc:
-                           (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl),
+                self.after(0, lambda n=game_name, gn=game_name, tid=title_id, v=ver_list[i], u=url, c=console, us=update_size_list[i], s=sha1, dp=download_path, fl=fileloc:
+                           (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
                             self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
                 
                 i = i+1
         
-        else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', ''))
+        else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '', ''))
 
     #Pauses and resumes download and sends pause message to the queue.
     def toggle_pause(self, dl_button, q):
@@ -893,25 +940,60 @@ class App(customtkinter.CTk):
 
     #Creates directories, updates buttons, downloads the update file, and checks the hash.
     def download_updates(self, url, download_path, size, sha1, index, title_id, name, console, fileloc, sem, prog_bar, status, dl_button, open_button, q):
+        update_filename = path.basename(fileloc)
+
+        if sha1 == 'N/A':
+            download_path = save_dir + console + '/' + console + ' Firmware' + '/' + title_id
+        else:
+            if folder_format == 'id_name':
+                download_path = (save_dir + console + '/[' + title_id + '] ' + name)
+            else:
+                download_path = (save_dir + console + '/' + name + ' [' + title_id + ']')
+
+        fileloc = (download_path + '/' + update_filename)
+
+        def try_configure(widget, **kwargs):
+            try:
+                widget.configure(**kwargs)
+            except Exception:
+                pass
+
+        def try_set(widget, val):
+            try:
+                widget.set(val)
+            except Exception:
+                pass
+
         if size > 0:
-            with sem:
-                def try_configure(widget, **kwargs):
+            try_configure(status, text_color='green', text='Queued')
+            try_configure(dl_button, text='Pause', command=lambda: self.toggle_pause(dl_button, q))
+            try_configure(open_button, text='Cancel', state = 'normal', command=lambda: self.cancel(dl_button, q))
+
+            acquired = False
+            while not acquired:
+                acquired = sem.acquire(timeout=0.25)
+                if not acquired:
                     try:
-                        widget.configure(**kwargs)
-                    except Exception:
+                        action = q.get_nowait()
+                        if action == ButtonAction.PAUSE:
+                            try_configure(status, text_color = 'yellow', text='Paused')
+                            new_action = q.get()
+                            if new_action == ButtonAction.STOP:
+                                try_configure(status, text_color='red', text='Download Cancelled!')
+                                try_configure(dl_button, command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
+                                return
+                            try_configure(status, text_color='green', text='Queued')
+                        elif action == ButtonAction.STOP:
+                            try_configure(status, text_color = 'red', text='Download Cancelled!')
+                            try_configure(dl_button, command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
+                            return
+                    except queue.Empty:
                         pass
 
-                def try_set(widget, val):
-                    try:
-                        widget.set(val)
-                    except Exception:
-                        pass
-
+            try:        
                 if path.exists(download_path) == False:
                     create_directories(download_path)
                 
-                try_configure(dl_button, text='Pause', command=lambda: self.toggle_pause(dl_button, q))
-                try_configure(open_button, text='Cancel', state = 'normal', command=lambda: self.cancel(dl_button, q))
                 try_configure(status, text_color='green', text='Downloading')
 
                 i=0
@@ -979,6 +1061,8 @@ class App(customtkinter.CTk):
                     os.remove(fileloc)
                 else:
                     self.is_shit_there(name, title_id, download_path, index, fileloc, console, sha1, size)
+            finally:
+                sem.release()
         else: pass
 
     #Downloads all files, or only new files based on the check box in the downall window. Pretty sure it belongs in the DownloadAllWindow class.

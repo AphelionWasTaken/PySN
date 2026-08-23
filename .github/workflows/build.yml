@@ -176,12 +176,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.7.2
-          name: v2.7.2
+          tag_name: v2.8.0
+          name: v2.8.0
           body: |
-            Fix an issue where cancelling items wouldn't clear them from the total downloads and would require a new search to redownload.
+            Better sanitization of game names to prevent issues with invalid characters in file paths.
 
-            Also clean up more of the codebase to make it more readable.
+            Allows users to change download directory and file name structure without having to search again to apply these settings.
+
+            Makes max downloads setting work as expected.
           draft: false
           prerelease: false
           files: |
