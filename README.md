@@ -20,7 +20,7 @@ Just download PySN_Windows.zip from [Releases](https://github.com/AphelionWasTak
 
 MacOS
 ------------------------
-Just download PySN_MacOS.zip from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest) and run the executable.
+Just download PySN_MacOS.zip or PySN_MacOS_ARM.zip (depending on whether you have an Intel or ARM CPU) from [Releases](https://github.com/AphelionWasTaken/PySN/releases/latest) and run the executable.
 
 It is recommended that you move the extracted PySN app to a new folder/location. Otherwise downloads will be sent to the AppTranslocation folder by default. You can also change the download location in the settings.
 
