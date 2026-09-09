@@ -40,6 +40,8 @@ On Windows you will need to point PySN to your RPCS3 installation via the settin
 
 If you want to download firmware, just type in "fw" or "firmware" and hit enter or click the search button.
 
+****Note for PS4 users, if you are searching for a disc-based games serial and see "invalid ID", you must search for the digital serial instead. Some game discs only contain authorizations to download the digital version despite having different serials.**
+
 File Locations
 ------------------------
 Title Updates are downloaded into an Updates folder within the directory containing PySN by default, and are separated by console and game (e.g. `PySN/Updates/PlayStation 3/[BCUS98114] Gran Turismo 5`).
