@@ -10,6 +10,7 @@ import yaml
 import time
 import sys
 import re
+import shutil
 import xml.etree.ElementTree as ET
 from tkinter import PhotoImage
 from pathlib import Path
@@ -575,7 +576,7 @@ class App(customtkinter.CTk):
             self.textbox.open_button_list[index].configure(state='normal')
             return 1
 
-        if sha1 == 'N/A':
+        if sha1 in ('N/A', 'PS4_SPLIT'):
             self.textbox.status_list[index].configure(text_color='green', text='Already Owned!')
             self.textbox.dlbutton_list[index].configure(state='normal')
             self.textbox.open_button_list[index].configure(state='normal')
@@ -719,10 +720,15 @@ class App(customtkinter.CTk):
                     man_url = (item.get('manifest_url'))
                     json_url = self.session.get(man_url, stream=True, verify=False, timeout=10)
                     json_cont = json.loads(json_url.content)
-                    for item in (json_cont['pieces']):
-                        url = (item.get('url'))
-                        sha1 = (item.get('hashValue'))
-                        update_size = (item.get('fileSize'))
+                    pieces = [
+                        {'url': p.get('url'), 'offset': int(p.get('fileOffset')),
+                         'size': int(p.get('fileSize')), 'hash': p.get('hashValue')}
+                        for p in json_cont['pieces']
+                    ]
+                    pieces.sort(key=lambda p: p['offset'])
+                    url = pieces
+                    sha1 = 'PS4_SPLIT'
+                    update_size = int(json_cont.get('originalFileSize', sum(p['size'] for p in pieces)))
                 else:
                     url = (item.get('url'))
                     sha1 = (item.get('sha1sum'))
@@ -737,7 +743,11 @@ class App(customtkinter.CTk):
                 else:
                     download_path = save_dir + console + '/' + name + ' [' + title_id + ']'
                 
-                update_file = path.basename(url)
+                if console == 'PlayStation 4':
+                    first_piece_name = path.basename(url[0]['url'])
+                    update_file = re.sub(r'_0(\.pkg)$', r'\1', first_piece_name)
+                else:
+                    update_file = path.basename(url)
                 fileloc = (download_path + '/' + update_file)
                 
                 self.after(0, lambda n=name, gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
@@ -993,7 +1003,7 @@ class App(customtkinter.CTk):
             try:        
                 if path.exists(download_path) == False:
                     create_directories(download_path)
-                
+
                 try_configure(status, text_color='green', text='Downloading')
 
                 i=0
@@ -1002,65 +1012,150 @@ class App(customtkinter.CTk):
                 downloaded_bytes = 0
                 size_mb = f"{round(size / 1024000, 2)}"
                 cancelled = False
+                download_failed = False
                 with self._download_lock:
                     self.total_download_size = self.total_download_size + size
 
-                #send a request to the update files URL. Handle threads and download behavior based on the button state.
-                with self.session.get(url, stream=True, verify=False) as r:
-                    r.raise_for_status()
-                    with open(fileloc,'wb') as f:
-                        for chunk in r.iter_content(chunk_size=(1024*1024)):
-                            try:
-                                action = q.get_nowait()
-                                if action == ButtonAction.PAUSE:
-                                    try_configure(status, text_color = 'yellow', text='Paused')
-                                    new_action = q.get()
-                                    if new_action == ButtonAction.STOP:
-                                        try_configure(status, text_color='red', text='Download Cancelled!')
-                                        break
-                                    try_configure(status, text_color='green', text='Downloading')
-                                elif action == ButtonAction.STOP:
-                                    try_configure(status, text_color = 'red', text='Download Cancelled!')
-                                    cancelled = True
-                                    break
-                            except queue.Empty:
-                                pass
+                def handle_chunk(f, chunk):
+                    nonlocal i, h, last_ui_update, downloaded_bytes, cancelled, download_failed
 
-                            #Download the file and update the progress bar and status label based on how much has downloaded.
-                            if chunk:
-                                f.write(chunk)
-                                i = i + (1/(size/(len(chunk))))
-                                h = h + len(chunk) / 1024000
-                                downloaded_bytes = downloaded_bytes + len(chunk)
-                                now = time.monotonic()
-                                with self._download_lock:
-                                    self.completed_download_size = self.completed_download_size + len(chunk)
-                                
-                                if now - last_ui_update > 0.01:
-                                    last_ui_update = now
-                                    self.after(0, lambda v = i: try_set(prog_bar, v))
-                                    try_configure(status, text_color = 'green', text= f"{h:.2f}/{size_mb}MB")
+                    try:
+                        action = q.get_nowait()
+                        if action == ButtonAction.PAUSE:
+                            try_configure(status, text_color='yellow', text='Paused')
+                            new_action = q.get()
+                            if new_action == ButtonAction.STOP:
+                                try_configure(status, text_color='red', text='Download Cancelled!')
+                                cancelled = True
+                                return 'stop'
+                            try_configure(status, text_color='green', text='Downloading')
+                        elif action == ButtonAction.STOP:
+                            try_configure(status, text_color='red', text='Download Cancelled!')
+                            cancelled = True
+                            return 'stop'
+                    except queue.Empty:
+                        pass
 
-                        #After the download loop, check if the download was cancelled. If it was, remove the file and update the completed download size.
+                    if chunk:
+                        f.write(chunk)
+                        i = i + (1/(size/(len(chunk))))
+                        h = h + len(chunk) / 1024000
+                        downloaded_bytes = downloaded_bytes + len(chunk)
+                        now = time.monotonic()
+                        with self._download_lock:
+                            self.completed_download_size = self.completed_download_size + len(chunk)
+
+                        if now - last_ui_update > 0.01:
+                            last_ui_update = now
+                            self.after(0, lambda v = i: try_set(prog_bar, v))
+                            try_configure(status, text_color = 'green', text= f"{h:.2f}/{size_mb}MB")
+                    return None
+
+                #Handle PS4 title update downloads since they are passed as a list of URLs.
+                if isinstance(url, list):
+                    piece_paths = []
+
+                    for n in range(len(url)):
+                        piece_paths.append(f"{fileloc}.part{n}")
+
+                    for n, piece in enumerate(url):
                         if cancelled:
-                            try:
-                                os.remove(fileloc)
-                            except:
-                                pass
-                            with self._download_lock:
-                                self.completed_download_size = self.completed_download_size - downloaded_bytes
-                                self.total_download_size = self.total_download_size - size
+                            break
+                        try_configure(status, text_color='green', text=f'Piece {n+1}/{len(url)}')
 
+                        piece_hash = hashlib.sha1()
+                        bytes_before = downloaded_bytes
+
+                        with self.session.get(piece['url'], stream=True, verify=False) as r:
+                            r.raise_for_status()
+                            with open(piece_paths[n], 'wb') as f:
+                                for chunk in r.iter_content(chunk_size=(1024*1024)):
+                                    if handle_chunk(f, chunk) == 'stop':
+                                        break
+                                    if chunk:
+                                        piece_hash.update(chunk)
+
+                        if cancelled:
+                            break
+
+                        piece_downloaded = downloaded_bytes - bytes_before
+
+                        #Check size and hash of the downloaded pieces.
+                        if piece_downloaded != piece['size']:
+                            download_failed = True
+                            try_configure(status, text_color='red', text=f'Piece {n+1} Size Mismatch!')
+                            break
+                        if piece_hash.hexdigest().lower() != (piece['hash'] or '').lower():
+                            download_failed = True
+                            try_configure(status, text_color='red', text=f'Piece {n+1} HASH MISMATCH!')
+                            break
+
+                    #Only combine if every piece downloaded cleanly and passed its hash check.
+                    if not cancelled and not download_failed:
+                        try_set(prog_bar, 1)
+                        try_configure(status, text_color='green', text='Combining pieces...')
+                        try_configure(dl_button, text='Redownload', state='disabled')
+                        try_configure(open_button, text='Open', state = 'disabled')
+                        with open(fileloc, 'wb') as out_f:
+                            for p_path in piece_paths:
+                                with open(p_path, 'rb') as f:
+                                    shutil.copyfileobj(f, out_f, length=1024*1024)
+
+                    #Remove piece files after combining or if the download was cancelled/failed.
+                    for p_path in piece_paths:
+                        try:
+                            os.remove(p_path)
+                        except Exception:
+                            pass
+                #Handle downloads for every other console and PS4 FW.
+                else:
+                    file_hash = hashlib.sha1()
+                    hash_limit = max(0, size - 32) if console in ('PlayStation 3', 'PlayStation Vita') else size
+                    hashed_bytes = 0
+
+                    with self.session.get(url, stream=True, verify=False) as r:
+                        r.raise_for_status()
+                        with open(fileloc, 'wb') as f:
+                            for chunk in r.iter_content(chunk_size=(1024*1024)):
+                                if handle_chunk(f, chunk) == 'stop':
+                                    break
+                                if chunk and hashed_bytes < hash_limit:
+                                    take = min(len(chunk), hash_limit - hashed_bytes)
+                                    file_hash.update(chunk[:take])
+                                    hashed_bytes += take
+
+                    #Check size and hash of the downloaded file.
+                    if not cancelled:
+                        try_set(prog_bar, 1)
+                        try_configure(status, text_color='yellow', text='Checking Hash...')
+                        try_configure(dl_button, text='Redownload', state='disabled')
+                        try_configure(open_button, text='Open', state = 'disabled')
+
+                        if downloaded_bytes != size:
+                            download_failed = True
+                            try_configure(status, text_color='red', text='Size Mismatch!')
+                        elif sha1 not in ('N/A', 'PS4_SPLIT'):
+                            if file_hash.hexdigest().lower() != (sha1 or '').lower():
+                                download_failed = True
+                                try_configure(status, text_color='red', text='HASH MISMATCH DETECTED!')
 
                 #After the file is downloaded, reconfigure the dl and open button behavior.
-                #Then remove the file if the dl was cancelled. If it completed, run is_shit_there to check the hash and configure buttons properly.
-                try_configure(dl_button, command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
-                try_configure(open_button, text='Open', state = 'disabled', command=lambda: None)
-                
-                if status.cget('text') == 'Download Cancelled!':
-                    os.remove(fileloc)
+                try_configure(dl_button, text='Redownload', state='normal', command=lambda: App.frame_button_download(self, name, title_id, url, console, size, sha1, index, download_path, fileloc))
+                try_configure(open_button, text='Open', state = 'disabled')
+
+                #After the download loop, check if the download was cancelled. If it was, remove the file and update the completed download size.
+                if cancelled or download_failed:
+                    if os.path.exists(fileloc):
+                        try:
+                            os.remove(fileloc)
+                        except Exception:
+                            pass
+                    with self._download_lock:
+                        self.completed_download_size = self.completed_download_size - downloaded_bytes
+                        self.total_download_size = self.total_download_size - size
                 else:
-                    self.is_shit_there(name, title_id, download_path, index, fileloc, console, sha1, size)
+                    try_configure(status, text_color='green', text='Download Completed!')
+                    try_configure(open_button, state = 'normal', command=lambda: self.open_loc(download_path))
             finally:
                 sem.release()
         else: pass

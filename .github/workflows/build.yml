@@ -176,14 +176,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.8.0
-          name: v2.8.0
+          tag_name: v2.8.1
+          name: v2.8.1
           body: |
-            Better sanitization of game names to prevent issues with invalid characters in file paths.
-
-            Allows users to change download directory and file name structure without having to search again to apply these settings.
-
-            Makes max downloads setting work as expected.
+            PySN now correctly identifies and downloads all pieces of a PS4 update file and then combines them into a single file.
+            
+            Previously, the app was only fetching the last piece. This was fine for many title updates that only have one piece, but many updates have multiple pieces.
+          
+            Also checks hashes and sizes of newly downloaded files more gracefully.
           draft: false
           prerelease: false
           files: |
