@@ -576,7 +576,7 @@ class App(customtkinter.CTk):
             self.textbox.open_button_list[index].configure(state='normal')
             return 1
 
-        if sha1 in ('N/A', 'PS4_SPLIT'):
+        if sha1 in ('N/A', 'PS4_SPLIT', 'PS4_DELTA'):
             self.textbox.status_list[index].configure(text_color='green', text='Already Owned!')
             self.textbox.dlbutton_list[index].configure(state='normal')
             self.textbox.open_button_list[index].configure(state='normal')
@@ -729,10 +729,26 @@ class App(customtkinter.CTk):
                     url = pieces
                     sha1 = 'PS4_SPLIT'
                     update_size = int(json_cont.get('originalFileSize', sum(p['size'] for p in pieces)))
+
+                    delta_elem = item.find('delta_info_set')
+                    if delta_elem is not None:
+                        delta_url = delta_elem.get('url')
+                    else:
+                        delta_url = None
+                    delta_size = 0
+                    if delta_url:
+                        delta_size = int(delta_elem.get('size', 0) or 0)
+                        if delta_size == 0:
+                            try:
+                                delta_head = self.session.get(delta_url, stream=True, verify=False, timeout=10)
+                                delta_size = int(delta_head.headers.get('Content-Length', 0))
+                            except Exception:
+                                delta_size = 0
                 else:
                     url = (item.get('url'))
                     sha1 = (item.get('sha1sum'))
                     update_size = int((item.get('size')))
+                    delta_url = None
 
                 #Assign a download path with some handling for odd characters in the game name. Add Widgets to the textbox and check if the file already exists.
                 name = re.sub(r'[^a-zA-Z0-9_\- \u3000-\u303F\u3040-\u30FF\u4E00-\u9FFF\uFF00-\uFFEF]', '', game_name).strip()
@@ -744,15 +760,35 @@ class App(customtkinter.CTk):
                     download_path = save_dir + console + '/' + name + ' [' + title_id + ']'
                 
                 if console == 'PlayStation 4':
-                    first_piece_name = path.basename(url[0]['url'])
+                    first_piece_name = path.basename(url[0]['url']).replace('_0.pkg', '.pkg')
                     update_file = re.sub(r'_0(\.pkg)$', r'\1', first_piece_name)
                 else:
                     update_file = path.basename(url)
                 fileloc = (download_path + '/' + update_file)
-                
-                self.after(0, lambda n=name, gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
-                          (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
-                           self.is_shit_there(n, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+
+                if console == 'PlayStation 4':
+                    if delta_url:
+                        delta_fileloc = (download_path + '/' + path.basename(delta_url))
+                    else:
+                        delta_fileloc = None
+
+                    def add_ps4_items(gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1,
+                                    dp=download_path, fl=fileloc, n=name,
+                                    d_url=delta_url, d_size=delta_size, d_fl=delta_fileloc):
+                        if d_url:
+                            d_idx = len(self.textbox.dlbutton_list)
+                            self.textbox.add_item(gn, tid, ' Delta Patch', d_url, c, d_size, 'PS4_DELTA', d_idx, dp, d_fl, n)
+                            self.is_shit_there(n, tid, dp, d_idx, d_fl, c, 'PS4_DELTA', d_size)
+
+                        tu_idx = len(self.textbox.dlbutton_list)
+                        self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, tu_idx, dp, fl, n)
+                        self.is_shit_there(n, tid, dp, tu_idx, fl, c, s, us)
+
+                    self.after(0, add_ps4_items)
+                else:
+                    self.after(0, lambda n=name, gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
+                            (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
+                            self.is_shit_there(n, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
 
         elif game_name == 'Invalid ID':
             self.after(0, lambda: self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '', ''))
@@ -1055,8 +1091,12 @@ class App(customtkinter.CTk):
                 if isinstance(url, list):
                     piece_paths = []
 
-                    for n in range(len(url)):
-                        piece_paths.append(f"{fileloc}.part{n}")
+                    if len(url) > 1:
+                        for n in range(len(url)):
+                            filename = fileloc.replace('.pkg', f'_{n}.pkg')
+                            piece_paths.append(filename)
+                    else:
+                        piece_paths.append(fileloc)
 
                     for n, piece in enumerate(url):
                         if cancelled:
@@ -1081,6 +1121,7 @@ class App(customtkinter.CTk):
                         piece_downloaded = downloaded_bytes - bytes_before
 
                         #Check size and hash of the downloaded pieces.
+                        try_set(prog_bar, 1)
                         if piece_downloaded != piece['size']:
                             download_failed = True
                             try_configure(status, text_color='red', text=f'Piece {n+1} Size Mismatch!')
@@ -1090,23 +1131,15 @@ class App(customtkinter.CTk):
                             try_configure(status, text_color='red', text=f'Piece {n+1} HASH MISMATCH!')
                             break
 
-                    #Only combine if every piece downloaded cleanly and passed its hash check.
-                    if not cancelled and not download_failed:
-                        try_set(prog_bar, 1)
-                        try_configure(status, text_color='green', text='Combining pieces...')
-                        try_configure(dl_button, text='Redownload', state='disabled')
-                        try_configure(open_button, text='Open', state = 'disabled')
-                        with open(fileloc, 'wb') as out_f:
-                            for p_path in piece_paths:
-                                with open(p_path, 'rb') as f:
-                                    shutil.copyfileobj(f, out_f, length=1024*1024)
+                    #Remove piece files if the download was cancelled/failed.
+                    if cancelled or download_failed:
+                        for p_path in piece_paths:
+                            try:
+                                os.remove(p_path)
+                            except Exception:
+                                pass
 
-                    #Remove piece files after combining or if the download was cancelled/failed.
-                    for p_path in piece_paths:
-                        try:
-                            os.remove(p_path)
-                        except Exception:
-                            pass
+                    filename = fileloc
                 #Handle downloads for every other console and PS4 FW.
                 else:
                     file_hash = hashlib.sha1()
@@ -1134,7 +1167,7 @@ class App(customtkinter.CTk):
                         if downloaded_bytes != size:
                             download_failed = True
                             try_configure(status, text_color='red', text='Size Mismatch!')
-                        elif sha1 not in ('N/A', 'PS4_SPLIT'):
+                        elif sha1 not in ('N/A', 'PS4_SPLIT', 'PS4_DELTA'):
                             if file_hash.hexdigest().lower() != (sha1 or '').lower():
                                 download_failed = True
                                 try_configure(status, text_color='red', text='HASH MISMATCH DETECTED!')
