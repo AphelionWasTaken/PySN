@@ -176,14 +176,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.8.1
-          name: v2.8.1
+          tag_name: v2.8.2
+          name: v2.8.2
           body: |
-            PySN now correctly identifies and downloads all pieces of a PS4 update file and then combines them into a single file.
-            
-            Previously, the app was only fetching the last piece. This was fine for many title updates that only have one piece, but many updates have multiple pieces.
-          
-            Also checks hashes and sizes of newly downloaded files more gracefully.
+            Adds a setting to combine PS4 game update pieces into a single file.
+
+            Allows for hash and size checking of both split and combined PS4 update files already on the users system.
           draft: false
           prerelease: false
           files: |
