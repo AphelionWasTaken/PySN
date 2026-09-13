@@ -70,10 +70,11 @@ class ConfigSettings():
         rpcs3_dir = config.get('paths', 'RPCS3')
         folder_format = config.get('formats', 'folder_format', fallback='id_name')
         max_downloads = config.getint('settings', 'max_downloads', fallback=12)
-        return save_dir, rpcs3_dir, folder_format, max_downloads
+        combine_ps4 = config.getboolean('settings', 'combine_ps4', fallback=True)
+        return save_dir, rpcs3_dir, folder_format, max_downloads, combine_ps4
 
     #Saves the config file.
-    def save_config(mode, save_dir , rpcs3_dir, folder_format='id_name', max_downloads=12):
+    def save_config(mode, save_dir , rpcs3_dir, folder_format='id_name', max_downloads=12, combine_ps4=True):
         config = ConfigParser()
         normalized_path, config_dir = ConfigSettings.get_path()
         config_path = os.path.join(config_dir, 'config.ini')
@@ -85,6 +86,7 @@ class ConfigSettings():
             config.set('formats', 'folder_format', folder_format)
             config.add_section('settings')
             config.set('settings', 'max_downloads', str(max_downloads))
+            config.set('settings', 'combine_ps4', str(combine_ps4).lower())
             config.write(ini)
 
     #Checks for the config file, and gets the settings from it. Saves default config if none present.
@@ -92,16 +94,17 @@ class ConfigSettings():
         normalized_path, config_dir = ConfigSettings.get_path()
         config_path = os.path.join(config_dir, 'config.ini')
         if os.path.exists(config_path):
-            save_dir, rpcs3_dir, folder_format, max_downloads = ConfigSettings.get_config()
+            save_dir, rpcs3_dir, folder_format, max_downloads, combine_ps4 = ConfigSettings.get_config()
         else:
             save_dir = (normalized_path + '/Updates/')
             rpcs3_dir = 'No Games.yml Location Set!'
             folder_format = 'id_name'
             max_downloads = 12
-            ConfigSettings.save_config('x', save_dir , rpcs3_dir, folder_format, max_downloads)
-        return save_dir, rpcs3_dir, folder_format, max_downloads
+            combine_ps4 = True
+            ConfigSettings.save_config('x', save_dir , rpcs3_dir, folder_format, max_downloads, combine_ps4)
+        return save_dir, rpcs3_dir, folder_format, max_downloads, combine_ps4
 
-save_dir, rpcs3_dir, folder_format, max_downloads = ConfigSettings.check_config()
+save_dir, rpcs3_dir, folder_format, max_downloads, combine_ps4 = ConfigSettings.check_config()
 
 class ResizableSemaphore:
     def __init__(self, capacity):
@@ -153,12 +156,12 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.geometry('540x480')
         self.resizable(0,0)
         self.title('Settings')
-        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10), weight=1)
         self.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         if sys.platform == 'win32':
             self.after(200, lambda: self.iconbitmap(resource_path("AphIcon.ico")))
 
-        self.temp_save, self.temp_rpcs3, self.temp_folder_format, self.temp_max_downloads = ConfigSettings.check_config()
+        self.temp_save, self.temp_rpcs3, self.temp_folder_format, self.temp_max_downloads, self.temp_combine_ps4 = ConfigSettings.check_config()
         self.char_limit = (self.register(self.validate_limit), '%P')
 
 
@@ -184,16 +187,22 @@ class SettingsWindow(customtkinter.CTkToplevel):
         self.folder_format_toggle.grid(row=5, column=1, columnspan=4, padx=5, pady=(0,0), sticky='new')
         self.folder_format_toggle.set('ID - Name' if folder_format == 'id_name' else 'Name - ID')
 
+        self.combine_ps4_label = customtkinter.CTkLabel(master=self, text='Combine PS4 Games:', anchor='center')
+        self.combine_ps4_label.grid(row=6, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
+        self.combine_ps4_toggle = customtkinter.CTkSegmentedButton(master=self, values=['Yes', 'No'])
+        self.combine_ps4_toggle.grid(row=7, column=1, columnspan=4, padx=5, pady=(0,0), sticky='new')
+        self.combine_ps4_toggle.set('Yes' if combine_ps4 else 'No')
+
         self.max_downloads_label = customtkinter.CTkLabel(master=self, text='Maximum Simultaneous Downloads (1-100):', anchor='center')
-        self.max_downloads_label.grid(row=6, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
+        self.max_downloads_label.grid(row=8, column=1, columnspan=4, padx=0, pady=(0,0), sticky='sew')
         self.max_downloads_entry = customtkinter.CTkEntry(master=self, width=25, justify='center', validate='key', validatecommand=self.char_limit)
-        self.max_downloads_entry.grid(row=7, column=1, columnspan=4, padx=(230,230), pady=(0,30), sticky='new')
+        self.max_downloads_entry.grid(row=9, column=1, columnspan=4, padx=(230,230), pady=(0,30), sticky='new')
         self.max_downloads_entry.insert(0, str(max_downloads))
 
         self.save_button = customtkinter.CTkButton(master=self, text='Save', width = 100, command = self.button_save)
-        self.save_button.grid(row=8, padx=(0,5), column=2, sticky='e')
+        self.save_button.grid(row=10, padx=(0,5), column=2, sticky='e')
         self.cancel_button = customtkinter.CTkButton(master=self, text='Cancel', width = 100, command=self.destroy)
-        self.cancel_button.grid(row=8, padx=(5,135), column=3, columnspan=2, sticky='w')
+        self.cancel_button.grid(row=10, padx=(5,135), column=3, columnspan=2, sticky='w')
 
         self.save_dir_field.insert('0.0',self.temp_save)
         self.save_dir_field.configure(state='disabled')
@@ -229,7 +238,7 @@ class SettingsWindow(customtkinter.CTkToplevel):
         global save_dir
         global folder_format
         global max_downloads
-        
+        global combine_ps4
         dl_entry = int(self.max_downloads_entry.get() or 12)
         if dl_entry < 1:
             dl_entry = 1
@@ -254,8 +263,13 @@ class SettingsWindow(customtkinter.CTkToplevel):
             folder_format = 'id_name'
         else:
             folder_format = 'name_id'
-        
-        ConfigSettings.save_config('w', save_dir , rpcs3_dir, folder_format, max_downloads)
+
+        if self.combine_ps4_toggle.get() == 'Yes':
+            combine_ps4 = True
+        else:
+            combine_ps4 = False
+
+        ConfigSettings.save_config('w', save_dir , rpcs3_dir, folder_format, max_downloads, combine_ps4)
         self.destroy()
 
     def validate_limit(self, text):
@@ -482,7 +496,7 @@ class App(customtkinter.CTk):
                 pass
 
     #Checks the hash of the file in a separate thread to avoid freezing the UI.
-    def hash_check_worker(self, index, fileloc, console, sha1):
+    def hash_check_worker(self, index, fileloc, console, sha1, piece=None):
         try:
             hash_obj = hashlib.sha1()
             with open(fileloc, 'rb') as f:
@@ -498,8 +512,11 @@ class App(customtkinter.CTk):
                 else:
                     for chunk in iter(lambda: f.read(4 * 1024 * 1024), b''):
                         hash_obj.update(chunk)
-            
-            match = (sha1.upper() == hash_obj.hexdigest().upper())
+
+            if piece is not None:
+                match = (piece['hash'].upper() == hash_obj.hexdigest().upper())
+            else:
+                match = (sha1.upper() == hash_obj.hexdigest().upper())
 
         except Exception:
             match = False
@@ -538,8 +555,8 @@ class App(customtkinter.CTk):
         self.after(50, self.update_total_progress_ui)
 
     #Checks if the download path already exists and if hashes match. Changes the buttons and status label accordingly.
-    def is_shit_there(self, name, title_id, download_path, index, fileloc, console, sha1, expected_size=None):
-        if not path.exists(fileloc):
+    def is_shit_there(self, name, title_id, download_path, index, fileloc, console, sha1, expected_size=None, url=None):
+        if not path.exists(fileloc) and not path.exists(fileloc.replace('.pkg', '_0.pkg')):
             if title_id and name:
                 if folder_format == 'id_name':
                     alt_download_path = save_dir + console + '/' + name + ' [' + title_id + ']'
@@ -569,20 +586,45 @@ class App(customtkinter.CTk):
         )
         self.textbox.prog_bar_list[index].set(1)
 
-        actual_size = os.path.getsize(fileloc)
-        if actual_size != expected_size:
-            self.textbox.status_list[index].configure(text_color='red', text='Size Mismatch!')
-            self.textbox.dlbutton_list[index].configure(state='normal')
-            self.textbox.open_button_list[index].configure(state='normal')
-            return 1
+        if url and not combine_ps4:
+            sizeloc = fileloc.replace('.pkg', '_0.pkg')
+            for n, piece in enumerate(url):
+                if n > 0:
+                    sizeloc = fileloc.replace('.pkg', f'_{n}.pkg')
+                if not path.exists(sizeloc):
+                    self.textbox.status_list[index].configure(text_color='red', text='Missing Split File!')
+                    self.textbox.dlbutton_list[index].configure(state='normal')
+                    self.textbox.open_button_list[index].configure(state='normal')
+                    return 1
+                else:
+                    actual_size = os.path.getsize(sizeloc)
+                    expected_size = piece['size']
+                    if actual_size != expected_size:
+                        self.textbox.status_list[index].configure(text_color='red', text='Size Mismatch!')
+                        self.textbox.dlbutton_list[index].configure(state='normal')
+                        self.textbox.open_button_list[index].configure(state='normal')
+                        return 1
+        else:
+            actual_size = os.path.getsize(fileloc)
+            if actual_size != expected_size:
+                self.textbox.status_list[index].configure(text_color='red', text='Size Mismatch!')
+                self.textbox.dlbutton_list[index].configure(state='normal')
+                self.textbox.open_button_list[index].configure(state='normal')
+                return 1
 
-        if sha1 in ('N/A', 'PS4_SPLIT', 'PS4_DELTA'):
+        if url and not combine_ps4:
+            location = fileloc.replace('.pkg', '_0.pkg')
+            for n, piece in enumerate(url):
+                if n > 0:
+                    location = fileloc.replace('.pkg', f'_{n}.pkg')
+                self.hash_executor.submit(self.hash_check_worker, index, location, console, sha1, piece)
+        elif sha1 in ('N/A', 'PS4_SPLIT', 'PS4_DELTA'):
             self.textbox.status_list[index].configure(text_color='green', text='Already Owned!')
             self.textbox.dlbutton_list[index].configure(state='normal')
             self.textbox.open_button_list[index].configure(state='normal')
             return 1
-
-        self.hash_executor.submit(self.hash_check_worker, index, fileloc, console, sha1)
+        else:
+            self.hash_executor.submit(self.hash_check_worker, index, fileloc, console, sha1, None)
         return 1
 
     #Opens the file location. Used with the open button.
@@ -778,17 +820,17 @@ class App(customtkinter.CTk):
                         if d_url:
                             d_idx = len(self.textbox.dlbutton_list)
                             self.textbox.add_item(gn, tid, ' Delta Patch', d_url, c, d_size, 'PS4_DELTA', d_idx, dp, d_fl, n)
-                            self.is_shit_there(n, tid, dp, d_idx, d_fl, c, 'PS4_DELTA', d_size)
+                            self.is_shit_there(n, tid, dp, d_idx, d_fl, c, 'PS4_DELTA', d_size, None)
 
                         tu_idx = len(self.textbox.dlbutton_list)
                         self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, tu_idx, dp, fl, n)
-                        self.is_shit_there(n, tid, dp, tu_idx, fl, c, s, us)
+                        self.is_shit_there(n, tid, dp, tu_idx, fl, c, s, us, u)
 
                     self.after(0, add_ps4_items)
                 else:
                     self.after(0, lambda n=name, gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
                             (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
-                            self.is_shit_there(n, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                            self.is_shit_there(n, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us, None)))
 
         elif game_name == 'Invalid ID':
             self.after(0, lambda: self.textbox.add_item('Invalid ID: ' + title_id, '', '', '', '', 0, '', '', '', '', ''))
@@ -846,7 +888,7 @@ class App(customtkinter.CTk):
                     
                     self.after(0, lambda n=name_list[i], gn=game_name_list[i], tid=title_id, v=version, u=url_list[i], c=console, us=update_size_list[i], s=sha1_list[i], dp=download_path, fl=fileloc:
                               (self.textbox.add_item(gn, tid, ' v' + v + ' DRM-Free', u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
-                               self.is_shit_there(n, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                               self.is_shit_there(n, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us, None)))
                     i = i+1
             else: pass
         else: pass
@@ -886,7 +928,7 @@ class App(customtkinter.CTk):
 
                 self.after(0, lambda n=game_name, gn=game_name, tid=title_id, v=ver, u=url, c=console, us=update_size, s=sha1, dp=download_path, fl=fileloc:
                            (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
-                            self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                            self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us, None)))
 
         else: self.after(0, lambda: self.textbox.add_item('Error Connecting to Server', '', '', '', '', 0, '', '', '', '', ''))
 
@@ -965,7 +1007,7 @@ class App(customtkinter.CTk):
                 
                 self.after(0, lambda n=game_name, gn=game_name, tid=title_id, v=ver_list[i], u=url, c=console, us=update_size_list[i], s=sha1, dp=download_path, fl=fileloc:
                            (self.textbox.add_item(gn, tid, ' v' + v, u, c, us, s, len(self.textbox.dlbutton_list), dp, fl, n),
-                            self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us)))
+                            self.is_shit_there(gn, tid, dp, len(self.textbox.dlbutton_list) - 1, fl, c, s, us, None)))
                 
                 i = i+1
         
@@ -1121,7 +1163,6 @@ class App(customtkinter.CTk):
                         piece_downloaded = downloaded_bytes - bytes_before
 
                         #Check size and hash of the downloaded pieces.
-                        try_set(prog_bar, 1)
                         if piece_downloaded != piece['size']:
                             download_failed = True
                             try_configure(status, text_color='red', text=f'Piece {n+1} Size Mismatch!')
@@ -1131,8 +1172,19 @@ class App(customtkinter.CTk):
                             try_configure(status, text_color='red', text=f'Piece {n+1} HASH MISMATCH!')
                             break
 
-                    #Remove piece files if the download was cancelled/failed.
-                    if cancelled or download_failed:
+                    #Combine files if the user has specified to do so and the download has succeeded.
+                    if combine_ps4 and not cancelled and not download_failed:
+                        try_set(prog_bar, 1)
+                        try_configure(status, text_color='green', text='Combining pieces...')
+                        try_configure(dl_button, text='Redownload', state='disabled')
+                        try_configure(open_button, text='Open', state = 'disabled')
+                        with open(fileloc, 'wb') as out_f:
+                            for p_path in piece_paths:
+                                with open(p_path, 'rb') as f:
+                                    shutil.copyfileobj(f, out_f, length=1024*1024)
+
+                    #Remove piece files if the download was cancelled/failed/combined.
+                    if combine_ps4 or cancelled or download_failed:
                         for p_path in piece_paths:
                             try:
                                 os.remove(p_path)
@@ -1140,6 +1192,7 @@ class App(customtkinter.CTk):
                                 pass
 
                     filename = fileloc
+
                 #Handle downloads for every other console and PS4 FW.
                 else:
                     file_hash = hashlib.sha1()
