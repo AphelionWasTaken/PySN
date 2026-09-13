@@ -7,6 +7,7 @@ Features:
 - SHA-1 hash verification of downloads and owned files
 - Ability to search RPCS3's games.yml
 - Support for DRM-Free Title Updates
+- Automatically merges PS4 update file pieces into one file
 - Most recent Firmware downloads for all 4 consoles
   - Includes PS4 recovery FW, Vita fonts, and Vita preinst FW
 
@@ -40,7 +41,16 @@ On Windows you will need to point PySN to your RPCS3 installation via the settin
 
 If you want to download firmware, just type in "fw" or "firmware" and hit enter or click the search button.
 
-****Note for PS4 users, if you are searching for a disc-based games serial and see "invalid ID", you must search for the digital serial instead. Some game discs only contain authorizations to download the digital version despite having different serials.**
+PS4 Users
+------------------------
+A few of notes for PS4 those searching for PS4 title updates:
+  - If you are searching for a disc based games serial and see "Invalid ID", you must search for the digital serial for your region instead. Some game discs, like Doom Eternal, just contain a copy of the digital version on the disc.
+  
+  - Large PS4 title update files are hosted in pieces. Most methods of updating PS4 games require a single title update file comprised of these pieces. PySN merges these pieces automatically by default. You can disable this in the settings menu.
+
+  - Delta update files are only required if you are upgrading from the version immediately prior to the most recent version and don't want to download the cumulative update file (i.e. you are on version 1.06 and the delta file is for 1.07).
+
+  - PySN only fetches the most recent cumulative and delta patches. For versions in between the base version and most recent version, visit https://orbispatches.com/
 
 File Locations
 ------------------------
@@ -53,6 +63,8 @@ On Windows the config file is saved to the directory containing PySN.exe. On Mac
 Installing Updates in RPCS3
 ------------------------
 To install your downloaded updates in RPCS3, open up RPCS3 and open the folder containing your downloaded updates for an individual game. Drag the PKG files into RPCS3 to start the installation process. You can select multiple PKG files at once, however you can not drag folders into RPCS3; only the actual PKG files.
+
+PS3 updates are not cumulative - you must install all versions offered up to the version you want to install (if you're on v1.00 and want v1.20, you must install all updates up to and including 1.20)
 
 If you would like to install all of your updates downloaded from PySN at once, you can use [PyKG](https://github.com/AphelionWasTaken/PyKG) to extract all of your PKG files to dev_hdd0/game in your RPCS3 installation.
 
