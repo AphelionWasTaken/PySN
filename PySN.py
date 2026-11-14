@@ -1133,12 +1133,9 @@ class App(customtkinter.CTk):
                 if isinstance(url, list):
                     piece_paths = []
 
-                    if len(url) > 1:
-                        for n in range(len(url)):
-                            filename = fileloc.replace('.pkg', f'_{n}.pkg')
-                            piece_paths.append(filename)
-                    else:
-                        piece_paths.append(fileloc)
+                    for n in range(len(url)):
+                        filename = fileloc.replace('.pkg', f'_{n}.pkg')
+                        piece_paths.append(filename)
 
                     for n, piece in enumerate(url):
                         if cancelled:
@@ -1178,13 +1175,16 @@ class App(customtkinter.CTk):
                         try_configure(status, text_color='green', text='Combining pieces...')
                         try_configure(dl_button, text='Redownload', state='disabled')
                         try_configure(open_button, text='Open', state = 'disabled')
-                        with open(fileloc, 'wb') as out_f:
-                            for p_path in piece_paths:
-                                with open(p_path, 'rb') as f:
-                                    shutil.copyfileobj(f, out_f, length=1024*1024)
+                        if len(piece_paths) == 1:
+                            os.replace(piece_paths[0], fileloc)
+                        else:
+                            with open(fileloc, 'wb') as out_f:
+                                for p_path in piece_paths:
+                                    with open(p_path, 'rb') as f:
+                                        shutil.copyfileobj(f, out_f, length=1024 * 1024)
 
                     #Remove piece files if the download was cancelled/failed/combined.
-                    if combine_ps4 or cancelled or download_failed:
+                    if (combine_ps4 and len(piece_paths) > 1) or cancelled or download_failed:
                         for p_path in piece_paths:
                             try:
                                 os.remove(p_path)
