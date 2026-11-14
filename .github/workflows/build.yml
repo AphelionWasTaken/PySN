@@ -176,12 +176,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v2.8.2
-          name: v2.8.2
+          tag_name: v2.8.3
+          name: v2.8.3
           body: |
-            Adds a setting to combine PS4 game update pieces into a single file.
-
-            Allows for hash and size checking of both split and combined PS4 update files already on the users system.
+            Fix small PS4 update downloads. Previously, attempting to download single-piece updates would remove the downloaded file due to a bug.
           draft: false
           prerelease: false
           files: |

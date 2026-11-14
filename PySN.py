@@ -1132,59 +1132,119 @@ class App(customtkinter.CTk):
                 #Handle PS4 title update downloads since they are passed as a list of URLs.
                 if isinstance(url, list):
                     piece_paths = []
+                    for n in range(len(url)):
+                        filename = fileloc.replace('.pkg', f'_{n}.pkg')
+                        piece_paths.append(filename)
 
-                    if len(url) > 1:
-                        for n in range(len(url)):
-                            filename = fileloc.replace('.pkg', f'_{n}.pkg')
-                            piece_paths.append(filename)
-                    else:
-                        piece_paths.append(fileloc)
+                    cancel_event = threading.Event()
+                    running_event = threading.Event()
+                    running_event.set()
 
-                    for n, piece in enumerate(url):
-                        if cancelled:
-                            break
-                        try_configure(status, text_color='green', text=f'Piece {n+1}/{len(url)}')
+                    def queue_watcher():
+                        while True:
+                            action = q.get()
+                            if action == ButtonAction.STOP:
+                                cancel_event.set()
+                                running_event.set()  # wake any paused workers so they can exit
+                                return
+                            elif action == ButtonAction.PAUSE:
+                                running_event.clear()
+                                try_configure(status, text_color='yellow', text='Paused')
+                            elif action == ButtonAction.RESUME:
+                                running_event.set()
+                                try_configure(status, text_color='green', text='Downloading')
 
+                    watcher_thread = threading.Thread(target=queue_watcher, daemon=True)
+                    watcher_thread.start()
+
+                    piece_progress = {}
+
+                    def download_piece(n, piece, piece_path):
                         piece_hash = hashlib.sha1()
-                        bytes_before = downloaded_bytes
+                        piece_downloaded = 0
+                        try:
+                            with self.session.get(piece['url'], stream=True, verify=False) as r:
+                                r.raise_for_status()
+                                with open(piece_path, 'wb') as f:
+                                    for chunk in r.iter_content(chunk_size=(1024 * 1024)):
+                                        if cancel_event.is_set():
+                                            return ('cancelled', n, piece_downloaded)
+                                        running_event.wait()
+                                        if cancel_event.is_set():
+                                            return ('cancelled', n, piece_downloaded)
+                                        if chunk:
+                                            f.write(chunk)
+                                            piece_hash.update(chunk)
+                                            piece_downloaded += len(chunk)
+                                            delta = piece_downloaded - piece_progress.get(n, 0)
+                                            piece_progress[n] = piece_downloaded
+                                            with self._download_lock:
+                                                self.completed_download_size += delta
+                        except Exception:
+                            return ('error', n, piece_downloaded)
 
-                        with self.session.get(piece['url'], stream=True, verify=False) as r:
-                            r.raise_for_status()
-                            with open(piece_paths[n], 'wb') as f:
-                                for chunk in r.iter_content(chunk_size=(1024*1024)):
-                                    if handle_chunk(f, chunk) == 'stop':
-                                        break
-                                    if chunk:
-                                        piece_hash.update(chunk)
-
-                        if cancelled:
-                            break
-
-                        piece_downloaded = downloaded_bytes - bytes_before
-
-                        #Check size and hash of the downloaded pieces.
                         if piece_downloaded != piece['size']:
-                            download_failed = True
-                            try_configure(status, text_color='red', text=f'Piece {n+1} Size Mismatch!')
-                            break
+                            return ('size_mismatch', n, piece_downloaded)
                         if piece_hash.hexdigest().lower() != (piece['hash'] or '').lower():
-                            download_failed = True
-                            try_configure(status, text_color='red', text=f'Piece {n+1} HASH MISMATCH!')
-                            break
+                            return ('hash_mismatch', n, piece_downloaded)
+                        return ('ok', n, piece_downloaded)
 
-                    #Combine files if the user has specified to do so and the download has succeeded.
+                    def progress_ticker():
+                        while not cancel_event.is_set():
+                            total_done = sum(piece_progress.values())
+                            frac = total_done / size if size else 0
+                            self.after(0, lambda v=frac: try_set(prog_bar, v))
+                            try_configure(status, text_color='green',
+                                          text=f"{total_done/1024000:.2f}/{size_mb}MB")
+                            if total_done >= size:
+                                break
+                            time.sleep(0.1)
+
+                    ticker_thread = threading.Thread(target=progress_ticker, daemon=True)
+                    ticker_thread.start()
+
+                    piece_workers = min(4, len(url))
+                    results = []
+                    with ThreadPoolExecutor(max_workers=piece_workers) as piece_executor:
+                        futures = [piece_executor.submit(download_piece, n, piece, piece_paths[n])
+                                   for n, piece in enumerate(url)]
+                        for future in futures:
+                            results.append(future.result())
+
+                    if not cancel_event.is_set():
+                        cancel_event.set()
+                        q.put(ButtonAction.STOP)
+                    watcher_thread.join(timeout=1)
+
+                    cancelled = any(r[0] == 'cancelled' for r in results)
+                    download_failed = any(r[0] in ('error', 'size_mismatch', 'hash_mismatch') for r in results)
+
+                    if download_failed and not cancelled:
+                        bad = next(r for r in results if r[0] in ('error', 'size_mismatch', 'hash_mismatch'))
+                        n = bad[1]
+                        msg = {'error': f'Piece {n+1} Download Error!',
+                               'size_mismatch': f'Piece {n+1} Size Mismatch!',
+                               'hash_mismatch': f'Piece {n+1} HASH MISMATCH!'}[bad[0]]
+                        try_configure(status, text_color='red', text=msg)
+                    elif cancelled:
+                        try_configure(status, text_color='red', text='Download Cancelled!')
+
+                    downloaded_bytes = sum(r[2] for r in results)
+
                     if combine_ps4 and not cancelled and not download_failed:
                         try_set(prog_bar, 1)
                         try_configure(status, text_color='green', text='Combining pieces...')
                         try_configure(dl_button, text='Redownload', state='disabled')
-                        try_configure(open_button, text='Open', state = 'disabled')
-                        with open(fileloc, 'wb') as out_f:
-                            for p_path in piece_paths:
-                                with open(p_path, 'rb') as f:
-                                    shutil.copyfileobj(f, out_f, length=1024*1024)
+                        try_configure(open_button, text='Open', state='disabled')
+                        if len(piece_paths) == 1:
+                            os.replace(piece_paths[0], fileloc)
+                        else:
+                            with open(fileloc, 'wb') as out_f:
+                                for p_path in piece_paths:
+                                    with open(p_path, 'rb') as f:
+                                        shutil.copyfileobj(f, out_f, length=1024 * 1024)
 
-                    #Remove piece files if the download was cancelled/failed/combined.
-                    if combine_ps4 or cancelled or download_failed:
+                    if (combine_ps4 and len(piece_paths) > 1) or cancelled or download_failed:
                         for p_path in piece_paths:
                             try:
                                 os.remove(p_path)
